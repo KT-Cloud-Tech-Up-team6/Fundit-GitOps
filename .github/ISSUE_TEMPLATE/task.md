@@ -2,6 +2,7 @@
 name: "일반 작업 및 설정 (Task / Chore)"
 about: "레포 설정, ArgoCD 연동, 문서화 등 일반적인 GitOps 작업을 정의합니다."
 title: "[Task]: "
+labels: ["task"]
 assignees: ""
 ---
 

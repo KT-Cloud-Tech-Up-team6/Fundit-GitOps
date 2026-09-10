@@ -2,7 +2,7 @@
 name: "매니페스트 변경 및 작업 계획서 (Change Request)"
 about: "기존 배포 매니페스트 수정, 스펙 증설, 설정 변경 작업을 계획합니다."
 title: "[Change]: "
-labels: ["k8s-config"]
+labels: ["k8s-config", "change-request"]
 assignees: ""
 ---
 
