@@ -1,0 +1,18 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: fundit-dev
+  namespace: argocd
+spec:
+  description: Fundit dev 환경 전용 프로젝트
+  sourceRepos:
+    - https://github.com/KT-Cloud-Tech-Up-team6/Fundit-GitOps.git
+  destinations:
+    - server: https://kubernetes.default.svc
+      namespace: dev
+  clusterResourceWhitelist:
+    - group: ""
+      kind: Namespace
+  namespaceResourceWhitelist:
+    - group: "*"
+      kind: "*"

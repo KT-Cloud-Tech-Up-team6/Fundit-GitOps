@@ -17,7 +17,7 @@ assignees: ""
 - **대상 서비스/리소스**: (예: order-service Deployment, HPA, KEDA ScaledObject 등)
 - **적용 대상 환경**:
   - [ ] `dev`
-  - [ ] `staging`
+  - [ ] `staging` (미사용, 선택해도 배포 안 됨)
   - [ ] `prod`
 - **상세 사양 / 설정**:
   - 
