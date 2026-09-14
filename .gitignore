@@ -1,0 +1,19 @@
+# Runtime configuration stays outside this repository. Only the template and
+# non-secret image reference file are versioned.
+.env
+.env.*
+*.env
+*.env.*
+!compose/dev/images.env
+!compose/dev/runtime.env.example
+
+# Local credentials, state, and editor files.
+.aws/
+.ssh/
+.docker/
+*.pem
+*.key
+*.log
+.DS_Store
+.idea/
+.vscode/
