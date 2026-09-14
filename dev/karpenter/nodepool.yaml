@@ -1,0 +1,36 @@
+apiVersion: karpenter.sh/v1
+kind: NodePool
+metadata:
+  name: fundit-dev-default
+spec:
+  template:
+    spec:
+      nodeClassRef:
+        group: karpenter.k8s.aws
+        kind: EC2NodeClass
+        name: fundit-dev-default
+      requirements:
+        - key: kubernetes.io/arch
+          operator: In
+          values: ["amd64"]
+        # 인터럽션 큐(SQS) 없이 spot을 켜면 노드 회수 시 파드가 경고 없이 죽는다.
+        # Fundit-Infra에 인터럽션 큐가 추가되기 전까지는 on-demand만 허용한다.
+        - key: karpenter.sh/capacity-type
+          operator: In
+          values: ["on-demand"]
+        - key: karpenter.k8s.aws/instance-category
+          operator: In
+          values: ["t"]
+        - key: karpenter.k8s.aws/instance-generation
+          operator: Gt
+          values: ["2"]
+      # 오래 떠 있는 노드의 커널·설정 드리프트를 방지하기 위한 주기적 교체
+      expireAfter: 720h
+  disruption:
+    consolidationPolicy: WhenEmptyOrUnderutilized
+    consolidateAfter: 5m
+  # 시스템 노드그룹 상시 용량(t3.medium x2 = 4vCPU/8Gi)만큼만 추가로 허용해
+  # 최악의 경우에도 클러스터 전체 용량이 평소의 2배를 넘지 않게 한다
+  limits:
+    cpu: "4"
+    memory: 8Gi
