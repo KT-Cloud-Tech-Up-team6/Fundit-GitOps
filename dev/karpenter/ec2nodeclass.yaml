@@ -1,0 +1,21 @@
+apiVersion: karpenter.k8s.aws/v1
+kind: EC2NodeClass
+metadata:
+  name: fundit-dev-default
+spec:
+  # KarpenterNodeRole-<clusterName> 명명 규약(Fundit-Infra modules/karpenter/main.tf)을 따라야
+  # role 이름만 지정해도 Karpenter가 인스턴스 프로필을 자동으로 관리한다
+  role: KarpenterNodeRole-fundit-dev-eks
+  amiFamily: AL2023
+  amiSelectorTerms:
+    - alias: al2023@latest
+  subnetSelectorTerms:
+    - tags:
+        karpenter.sh/discovery: fundit-dev-eks
+  securityGroupSelectorTerms:
+    - tags:
+        aws:eks:cluster-name: fundit-dev-eks
+  tags:
+    Project: Fundit
+    Environment: dev
+    ManagedBy: Karpenter
