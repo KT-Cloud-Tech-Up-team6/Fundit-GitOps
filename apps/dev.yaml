@@ -1,0 +1,22 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: fundit-dev
+  namespace: argocd
+spec:
+  project: fundit-dev
+  source:
+    repoURL: https://github.com/KT-Cloud-Tech-Up-team6/Fundit-GitOps.git
+    targetRevision: main
+    path: dev
+    directory:
+      recurse: true
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: dev
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

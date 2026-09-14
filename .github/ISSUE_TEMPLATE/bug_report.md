@@ -26,6 +26,6 @@ assignees: ""
 - **실제 동작**: 
 
 ## 환경 정보 (Environment Info)
-- **발생 환경**: `dev` / `staging` / `prod`
+- **발생 환경**: `dev` / `staging`(미사용, 선택해도 배포 안 됨) / `prod`
 - **Application/서비스명**:
 - **ArgoCD 버전**:

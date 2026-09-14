@@ -12,7 +12,7 @@ assignees: ""
 - 
 
 ## 변경 범위 (Scope of Changes)
-- **영향 받는 환경**: `dev` / `staging` / `prod`
+- **영향 받는 환경**: `dev` / `staging`(미사용, 선택해도 배포 안 됨) / `prod`
 - **영향 받는 서비스/리소스**: (예: `order-service`, `hpa`, `keda-scaledobject`)
 - **서비스 중단/다운타임 예상 여부**:
   - [ ] 다운타임 없음 (무중단 작업)
