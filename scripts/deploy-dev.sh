@@ -74,9 +74,13 @@ case "$GATEWAY_BIND_ADDRESS" in
   127.0.0.1|0.0.0.0) ;;
   *) die 'GATEWAY_BIND_ADDRESS must be 127.0.0.1 or 0.0.0.0.' ;;
 esac
-[[ "$GATEWAY_HOST_PORT" =~ ^[1-9][0-9]{0,4}$ ]] && (( GATEWAY_HOST_PORT <= 65535 )) || die 'GATEWAY_HOST_PORT must be between 1 and 65535.'
+if [[ ! "$GATEWAY_HOST_PORT" =~ ^[1-9][0-9]{0,4}$ ]] || (( GATEWAY_HOST_PORT > 65535 )); then
+  die 'GATEWAY_HOST_PORT must be between 1 and 65535.'
+fi
 health_timeout=${HEALTH_TIMEOUT_SECONDS:-120}
-[[ "$health_timeout" =~ ^[1-9][0-9]{0,2}$ ]] && (( health_timeout <= 600 )) || die 'HEALTH_TIMEOUT_SECONDS must be between 1 and 600.'
+if [[ ! "$health_timeout" =~ ^[1-9][0-9]{0,2}$ ]] || (( health_timeout > 600 )); then
+  die 'HEALTH_TIMEOUT_SECONDS must be between 1 and 600.'
+fi
 
 compose_version=$(docker compose version --short 2>/dev/null) || die 'Docker Compose plugin is required.'
 [[ "$compose_version" =~ ^v?([0-9]+)\.([0-9]+)\.([0-9]+) ]] || die 'Unable to determine Docker Compose version.'
@@ -98,8 +102,7 @@ flock -n 9 || die 'Another development deployment is in progress.'
 
 # ECR credentials live only in this temporary Docker config, never in Git.
 docker_config_dir=$(mktemp -d /tmp/fundit-dev-docker.XXXXXX)
-cleanup() { rm -rf -- "$docker_config_dir"; }
-trap cleanup EXIT
+trap 'rm -rf -- "$docker_config_dir"' EXIT
 trap 'exit 130' INT
 trap 'exit 143' TERM
 export DOCKER_CONFIG="$docker_config_dir"
