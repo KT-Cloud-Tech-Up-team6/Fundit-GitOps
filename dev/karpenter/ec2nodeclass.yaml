@@ -7,6 +7,8 @@ spec:
   # role 이름만 지정해도 Karpenter가 인스턴스 프로필을 자동으로 관리한다
   role: KarpenterNodeRole-fundit-dev-eks
   amiFamily: AL2023
+  # 새 AMI가 나오면 기존 노드를 drift로 감지해 자동 교체한다. dev 환경이라 의도적으로 최신을 따라간다.
+  # 재현 가능한 롤아웃이 필요해지면 al2023@vYYYYMMDD로 날짜를 고정한다.
   amiSelectorTerms:
     - alias: al2023@latest
   subnetSelectorTerms:
