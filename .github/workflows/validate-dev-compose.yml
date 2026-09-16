@@ -6,6 +6,10 @@ on:
     paths:
       - 'compose/dev/**'
       - 'scripts/deploy-dev.sh'
+      - 'scripts/deploy-dev-revision.sh'
+      - 'scripts/dispatch-dev-deploy.py'
+      - 'tests/**'
+      - '.github/workflows/deploy-dev-ssm.yml'
       - '.github/workflows/validate-dev-compose.yml'
       - '.gitignore'
       - 'README.md'
@@ -14,6 +18,10 @@ on:
     paths:
       - 'compose/dev/**'
       - 'scripts/deploy-dev.sh'
+      - 'scripts/deploy-dev-revision.sh'
+      - 'scripts/dispatch-dev-deploy.py'
+      - 'tests/**'
+      - '.github/workflows/deploy-dev-ssm.yml'
       - '.github/workflows/validate-dev-compose.yml'
       - '.gitignore'
       - 'README.md'
@@ -38,7 +46,10 @@ jobs:
       - name: Check script syntax and lint
         run: |
           bash -n scripts/deploy-dev.sh
+          bash -n scripts/deploy-dev-revision.sh
           shellcheck scripts/deploy-dev.sh
+          shellcheck scripts/deploy-dev-revision.sh
+          python3 -m unittest discover -s tests -p 'test_*.py'
 
       - name: Validate Compose and deployment preflight with dummy data
         shell: bash
