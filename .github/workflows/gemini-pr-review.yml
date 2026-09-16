@@ -1,4 +1,4 @@
-name: Gemini PR Code Review Bot
+name: Gemini PR Inline Code Review Bot
 
 on:
   pull_request:
@@ -30,21 +30,24 @@ jobs:
         run: |
           pip install google-genai requests
 
-      - name: Get PR Diff & Review with Gemini
+      - name: Inline Review with Gemini
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           REPO_NAME: ${{ github.repository }}
+          COMMIT_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
           python - << 'PYEOF'
           import os
+          import json
           import subprocess
           import requests
           from google import genai
+          from google.genai import types
 
           base_ref = "${{ github.base_ref }}"
-          diff_command = f"git diff origin/{base_ref}...HEAD"
+          diff_command = f"git diff -U3 origin/{base_ref}...HEAD"
           try:
               diff_output = subprocess.check_output(diff_command, shell=True, text=True)
           except subprocess.CalledProcessError:
@@ -62,16 +65,29 @@ jobs:
 
           prompt = f"""
           당신은 노련한 시니어 클라우드 인프라 및 GitOps 플랫폼 엔지니어입니다.
-          제공된 GitHub PR의 git diff를 분석하고, 한국어로 정중하고 건설적인 코드 리뷰를 작성해주세요.
+          제공된 GitHub PR의 git diff를 정밀 분석하고, 코드래빗(CodeRabbit) 스타일로 라인별 인라인 코드 리뷰와 종합 요약을 작성해주세요.
 
-          ### 리뷰 기준:
-          1. **3줄 핵심 요약**: 어떤 변경 사항인지 요약
-          2. **보안 및 위험도 점검**:
-             - 하드코딩된 패스워드, API 키, AWS 토큰 유출 여부
-             - Kubernetes 매니페스트 보안 (root 권한 실행, privileged 모드, 리소스 Limit 누락 등)
-             - Helm 차트 values 문법 및 구조적 위험
-          3. **개선 제안**: 모범 사례(Best Practice)에 맞춘 개선점
-          4. **총평**: Merge 가능 여부 (LGTM / 수정 요청)
+          ### 필수 지침:
+          1. **inline_comments**:
+             - 반드시 git diff에서 **새로 추가되거나 수정된 라인(+)**에 대해서만 코멘트를 작성하세요.
+             - path: 변경된 파일의 정확한 상대 경로
+             - line: 해당 파일에서 변경된 줄 번호 (diff의 새로운 파일 기준 라인 번호)
+             - comment: 친절하고 건설적인 한국어 피드백 (보안 취약점, K8s 리소스 Limit, 오타, 성능 개선안 등)
+             - 칭찬이나 사소한 잡담은 빼고, 실제로 개선이 필요한 중요한 부분 위주로 작성하세요.
+          2. **summary**:
+             - 전체 변경 내역을 3줄로 요약하고, 보안 위험도 및 총평을 마크다운 형식으로 작성하세요.
+
+          반드시 아래 JSON 스키마 형식으로만 응답하세요:
+          {{
+            "summary": "### 🤖 Gemini AI 요약\\n- 요약 내용...",
+            "inline_comments": [
+              {{
+                "path": "path/to/file.yaml",
+                "line": 42,
+                "comment": "💡 **개선 제안**: 이 부분에..."
+              }}
+            ]
+          }}
 
           ---
           Git Diff:
@@ -80,29 +96,71 @@ jobs:
           ```
           """
 
-          print("Requesting review from Gemini...")
+          print("Requesting inline review from Gemini...")
           response = client.models.generate_content(
               model='gemini-2.5-flash',
-              contents=prompt
+              contents=prompt,
+              config=types.GenerateContentConfig(
+                  response_mime_type="application/json"
+              )
           )
-          review_comment = response.text
+
+          try:
+              review_data = json.loads(response.text)
+          except Exception as e:
+              print(f"JSON parsing error: {e}")
+              review_data = {
+                  "summary": response.text,
+                  "inline_comments": []
+              }
 
           repo = os.environ["REPO_NAME"]
           pr_num = os.environ["PR_NUMBER"]
           gh_token = os.environ["GITHUB_TOKEN"]
+          commit_sha = os.environ["COMMIT_SHA"]
 
-          comment_body = f"## 🤖 Gemini AI Code Review\n\n{review_comment}\n\n---\n*Automated review by Gemini Flash*"
-          
+          summary_text = review_data.get("summary", "Gemini Code Review 완료")
+          inline_comments = review_data.get("inline_comments", [])
+
           headers = {
               "Authorization": f"Bearer {gh_token}",
               "Accept": "application/vnd.github.v3+json"
           }
-          url = f"https://api.github.com/repos/{repo}/issues/{pr_num}/comments"
-          res = requests.post(url, json={"body": comment_body}, headers=headers)
 
-          if res.status_code == 201:
-              print("Review comment posted successfully!")
+          # 1. GitHub Review API 형식에 맞춰 코멘트 구성
+          comments_payload = []
+          for item in inline_comments:
+              if "path" in item and "line" in item and "comment" in item:
+                  comments_payload.append({
+                      "path": item["path"],
+                      "line": int(item["line"]),
+                      "side": "RIGHT",
+                      "body": item["comment"]
+                  })
+
+          review_payload = {
+              "commit_id": commit_sha,
+              "body": f"## 🤖 Gemini AI Code Review\n\n{summary_text}\n\n---\n*Automated review by Gemini Flash*",
+              "event": "COMMENT",
+              "comments": comments_payload
+          }
+
+          # 2. Review API 호출 (한 번에 종합 요약 + 인라인 댓글 일괄 등록)
+          review_url = f"https://api.github.com/repos/{repo}/pulls/{pr_num}/reviews"
+          res = requests.post(review_url, json=review_payload, headers=headers)
+
+          if res.status_code == 200:
+              print(f"Successfully posted review with {len(comments_payload)} inline comments!")
           else:
-              print(f"Failed to post comment: {res.text}")
-              exit(1)
+              print(f"Review API call returned {res.status_code}: {res.text}")
+              print("Fallback: posting summary comment only...")
+              # 만약 라인 번호 불일치 등으로 422 에러 발생 시, 폴백으로 일반 코멘트 등록
+              fallback_url = f"https://api.github.com/repos/{repo}/issues/{pr_num}/comments"
+              fallback_body = f"## 🤖 Gemini AI Code Review\n\n{summary_text}\n\n"
+              if inline_comments:
+                  fallback_body += "### 💬 인라인 피드백 목록\n"
+                  for item in inline_comments:
+                      fallback_body += f"- **`{item.get('path')}:{item.get('line')}`**: {item.get('comment')}\n"
+              requests.post(fallback_url, json={"body": fallback_body}, headers=headers)
+
           PYEOF
