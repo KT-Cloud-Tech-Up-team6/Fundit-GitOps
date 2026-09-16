@@ -1,0 +1,128 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: fundit-alerts
+  namespace: monitoring
+  labels:
+    release: kube-prometheus-stack  
+spec:
+  groups:
+
+    
+    - name: fundit.critical
+      rules:
+
+        - alert: PaymentAPIDown
+          expr: up{job="payment-service"} == 0
+          for: 1m
+          labels:
+            severity: critical
+          annotations:
+            summary: "결제 API 다운"
+            description: "payment-service가 1분 이상 응답하지 않습니다."
+
+        - alert: FundingAPIDown
+          expr: up{job="funding-service"} == 0
+          for: 1m
+          labels:
+            severity: critical
+          annotations:
+            summary: "펀딩 API 다운"
+            description: "funding-service가 1분 이상 응답하지 않습니다."
+
+        - alert: OversellDetected
+          expr: increase(campaign_oversell_count[1m]) > 0
+          for: 0m   
+          labels:
+            severity: critical
+          annotations:
+            summary: "오버셀 발생"
+            description: "캠페인 재고보다 많은 주문이 승인됐습니다. 즉시 확인이 필요합니다."
+
+        - alert: CampaignOpenFailureRateHigh
+          expr: |
+            (
+              sum(rate(campaign_open_concurrent_requests{status="fail"}[1m]))
+              /
+              sum(rate(campaign_open_concurrent_requests[1m]))
+            ) > 0.01
+          for: 30s   
+          labels:
+            severity: critical
+          annotations:
+            summary: "방송/펀딩 오픈 순간 처리 실패율 급증"
+            description: "오픈 직후 처리 실패율이 1%를 초과했습니다 (목표: 처리율 99% 이상)."
+
+    
+    - name: fundit.warning
+      rules:
+
+        - alert: PaymentSuccessRateLow
+          expr: |
+            (
+              sum(rate(payment_requests_total{status="success"}[5m]))
+              /
+              sum(rate(payment_requests_total[5m]))
+            ) < 0.995
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "결제 성공률 SLO 미달"
+            description: "최근 5분간 결제 성공률이 99.5% 미만입니다."
+
+        - alert: InventoryMismatchRateHigh
+          expr: |
+            (
+              sum(rate(funding_amount_mismatch_count[10m]))
+              /
+              sum(rate(campaign_open_concurrent_requests[10m]))
+            ) > 0.005
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "재고-주문 매칭 실패율 상승"
+            description: "재고-주문 매칭 실패율이 0.5%를 초과했습니다."
+
+        - alert: StreamRebufferRatioHigh
+          expr: avg(stream_rebuffer_ratio) > 0.01
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "방송 리버퍼링 비율 상승"
+            description: "시청 시간 중 리버퍼링 비율이 1%를 초과했습니다."
+
+        - alert: StreamStartLatencyHigh
+          expr: histogram_quantile(0.95, rate(stream_start_latency_seconds_bucket[5m])) > 30
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "방송 시작 지연"
+            description: "채널 생성부터 송출 시작까지 p95 지연이 30초를 초과했습니다."
+
+    
+    - name: fundit.infra
+      rules:
+
+        - alert: NodeCPUHigh
+          expr: |
+            100 - (avg by (instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 90
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "노드 CPU 사용률 90% 초과"
+            description: "{{ $labels.instance }} 노드의 CPU 사용률이 5분 이상 90%를 넘었습니다."
+
+        - alert: PodCrashLooping
+          expr: increase(kube_pod_container_status_restarts_total[10m]) > 3
+          for: 5m
+          labels:
+            severity: critical   
+          annotations:
+            summary: "Pod 반복 재시작 (CrashLoopBackOff 의심)"
+            description: "{{ $labels.namespace }}/{{ $labels.pod }} 컨테이너가 10분 내 3회 이상 재시작했습니다."
+
