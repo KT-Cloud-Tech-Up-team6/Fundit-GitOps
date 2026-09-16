@@ -4,7 +4,7 @@ metadata:
   name: fundit-alerts
   namespace: monitoring
   labels:
-    release: kube-prometheus-stack  
+    release: kube-prometheus-stack   
 spec:
   groups:
 
@@ -21,14 +21,23 @@ spec:
             summary: "결제 API 다운"
             description: "payment-service가 1분 이상 응답하지 않습니다."
 
-        - alert: FundingAPIDown
-          expr: up{job="funding-service"} == 0
+        - alert: ProjectServiceDown
+          expr: up{job="project-service"} == 0
           for: 1m
           labels:
             severity: critical
           annotations:
-            summary: "펀딩 API 다운"
-            description: "funding-service가 1분 이상 응답하지 않습니다."
+            summary: "캠페인(프로젝트) API 다운"
+            description: "project-service가 1분 이상 응답하지 않습니다."
+
+        - alert: OrderServiceDown
+          expr: up{job="order-service"} == 0
+          for: 1m
+          labels:
+            severity: critical
+          annotations:
+            summary: "주문(펀딩 참여) API 다운"
+            description: "order-service가 1분 이상 응답하지 않습니다."
 
         - alert: OversellDetected
           expr: increase(campaign_oversell_count[1m]) > 0
@@ -74,7 +83,7 @@ spec:
         - alert: InventoryMismatchRateHigh
           expr: |
             (
-              sum(rate(funding_amount_mismatch_count[10m]))
+              sum(rate(campaign_amount_mismatch_count[10m]))
               /
               sum(rate(campaign_open_concurrent_requests[10m]))
             ) > 0.005
