@@ -1,6 +1,7 @@
 import json
 import os
 import subprocess
+import sys
 import requests
 
 
@@ -14,13 +15,22 @@ def main():
     from google import genai
     from google.genai import types
 
-
-    # 2. Git Diff 추출
+    # 2. Git Diff 추출 (shell=True 제거 및 인자 배열 형태의 subprocess 호출)
     base_ref = os.environ.get("BASE_REF", "main")
-    diff_command = f"git diff -U3 origin/{base_ref}...HEAD"
+    head_sha = os.environ.get("HEAD_SHA") or os.environ.get("COMMIT_SHA", "HEAD")
+    diff_target = f"origin/{base_ref}...{head_sha}"
+
     try:
-        diff_output = subprocess.check_output(diff_command, shell=True, text=True)
-    except subprocess.CalledProcessError:
+        diff_output = subprocess.check_output(
+            ["git", "diff", "-U3", diff_target],
+            text=True,
+            timeout=30,
+        )
+    except subprocess.CalledProcessError as e:
+        print(f"Git diff command failed ({e.returncode}): {e.output}")
+        diff_output = ""
+    except subprocess.TimeoutExpired:
+        print("Git diff command timed out after 30 seconds.")
         diff_output = ""
 
     if not diff_output.strip():
@@ -74,13 +84,17 @@ Git Diff:
 """
 
     print("Requesting inline review from Gemini...")
-    response = client.models.generate_content(
-        model="gemini-2.5-flash",
-        contents=prompt,
-        config=types.GenerateContentConfig(
-            response_mime_type="application/json"
-        ),
-    )
+    try:
+        response = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                response_mime_type="application/json"
+            ),
+        )
+    except Exception as e:
+        print(f"Gemini API generation failed: {e}")
+        sys.exit(1)
 
     try:
         review_data = json.loads(response.text)
@@ -122,23 +136,45 @@ Git Diff:
         "comments": comments_payload
     }
 
-    # 6. Review API 호출 (일괄 인라인 댓글 및 요약 등록)
+    # 6. Review API 호출 (일괄 인라인 댓글 및 요약 등록, timeout 추가)
     review_url = f"https://api.github.com/repos/{repo}/pulls/{pr_num}/reviews"
-    res = requests.post(review_url, json=review_payload, headers=headers)
+    review_posted = False
 
-    if res.status_code == 200:
-        print(f"Successfully posted review with {len(comments_payload)} inline comments!")
-    else:
-        print(f"Review API call returned {res.status_code}: {res.text}")
+    try:
+        res = requests.post(review_url, json=review_payload, headers=headers, timeout=30)
+        if res.status_code in (200, 201):
+            print(f"Successfully posted review with {len(comments_payload)} inline comments!")
+            review_posted = True
+        else:
+            print(f"Review API call returned {res.status_code}: {res.text}")
+    except requests.RequestException as e:
+        print(f"Review API network error: {e}")
+
+    # 1차 review 등록 실패 시 fallback으로 issue comment 등록 및 실패 검증
+    if not review_posted:
         print("Fallback: posting summary comment only...")
-        # 라인 번호 불일치 등 422 에러 발생 시 fallback으로 일반 코멘트 등록
         fallback_url = f"https://api.github.com/repos/{repo}/issues/{pr_num}/comments"
         fallback_body = f"## 🤖 Gemini AI Code Review\n\n{summary_text}\n\n"
         if inline_comments:
             fallback_body += "### 💬 인라인 피드백 목록\n"
             for item in inline_comments:
                 fallback_body += f"- **`{item.get('path')}:{item.get('line')}`**: {item.get('comment')}\n"
-        requests.post(fallback_url, json={"body": fallback_body}, headers=headers)
+
+        try:
+            fallback_res = requests.post(
+                fallback_url,
+                json={"body": fallback_body},
+                headers=headers,
+                timeout=30
+            )
+            if fallback_res.status_code in (200, 201):
+                print("Successfully posted fallback review comment!")
+            else:
+                print(f"Fallback comment API call failed with status {fallback_res.status_code}: {fallback_res.text}")
+                sys.exit(1)
+        except requests.RequestException as e:
+            print(f"Fallback comment API network error: {e}")
+            sys.exit(1)
 
 
 if __name__ == "__main__":
