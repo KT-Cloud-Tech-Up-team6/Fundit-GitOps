@@ -1,0 +1,50 @@
+name: Deploy dev Gateway via SSM
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-dev-gateway
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    # This repository variable is enabled only after server and Environment setup.
+    if: github.ref == 'refs/heads/main' && vars.DEV_DEPLOY_ENABLED == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    environment: dev-deploy
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      AWS_REGION: ap-northeast-2
+      AWS_PAGER: ''
+      DEPLOY_ENABLED: ${{ vars.DEV_DEPLOY_ENABLED }}
+      DEPLOY_REF: ${{ github.ref }}
+      DEPLOY_GIT_SHA: ${{ github.sha }}
+      DEPLOY_INSTANCE_ID: ${{ vars.DEV_DEPLOY_INSTANCE_ID }}
+      DEPLOY_ROLE_ARN: ${{ vars.DEV_DEPLOY_ROLE_ARN }}
+      DEPLOY_DOCUMENT_VERSION: ${{ vars.DEV_DEPLOY_DOCUMENT_VERSION }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+
+      - name: Validate deployment settings before AWS authentication
+        run: python3 scripts/dispatch-dev-deploy.py --check
+
+      - name: Authenticate with the GitOps deployment role
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.DEV_DEPLOY_ROLE_ARN }}
+          aws-region: ap-northeast-2
+          role-session-name: gitops-dev-${{ github.run_id }}
+          role-duration-seconds: 1800
+
+      - name: Deploy the selected GitOps revision and wait for health check
+        run: python3 scripts/dispatch-dev-deploy.py
