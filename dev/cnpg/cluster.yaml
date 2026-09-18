@@ -1,0 +1,44 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: fundit-dev-postgres
+  namespace: dev
+spec:
+  instances: 2
+
+  # 백엔드 로컬 개발(docker-compose, Testcontainers)이 전부 postgres:16을 쓴다.
+  # imageName을 안 정하면 오퍼레이터 1.30.0 기본값(18.4)이 적용돼 버전이 어긋난다.
+  imageName: ghcr.io/cloudnative-pg/postgresql:16-system-trixie
+
+  storage:
+    size: 10Gi
+    storageClass: gp3-retain
+
+  walStorage:
+    size: 5Gi
+    storageClass: gp3-retain
+
+  # topologyKey를 zone으로 지정해야 실제로 AZ 단위 분리가 된다.
+  # 지정 안 하면 기본값은 노드(hostname) 단위라, 지금 두 노드가 서로 다른
+  # AZ에 있어 우연히 AZ가 갈릴 뿐 보장되는 게 아니다.
+  affinity:
+    enablePodAntiAffinity: true
+    topologyKey: topology.kubernetes.io/zone
+    podAntiAffinityType: preferred
+
+  serviceAccountTemplate:
+    metadata:
+      annotations:
+        # CNPGBackupRole의 신뢰 정책이 system:serviceaccount:dev:fundit-dev-postgres로
+        # 고정돼 있어 Cluster 이름을 바꾸면 이 IRSA가 동작하지 않는다.
+        eks.amazonaws.com/role-arn: arn:aws:iam::899957568205:role/CNPGBackupRole-fundit-dev-eks
+
+  backup:
+    retentionPolicy: "7d"
+    barmanObjectStore:
+      destinationPath: s3://fundit-dev-s3-db-backup/fundit-dev-postgres
+      s3Credentials:
+        inheritFromIAMRole: true
+
+  bootstrap:
+    initdb: {}
