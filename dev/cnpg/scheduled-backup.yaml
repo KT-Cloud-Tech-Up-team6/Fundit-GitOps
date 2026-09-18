@@ -1,0 +1,13 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: ScheduledBackup
+metadata:
+  name: fundit-dev-postgres-backup
+  namespace: dev
+spec:
+  # 초 분 시 일 월 요일. 오퍼레이터 파드가 UTC라고 가정하고 18시(KST 새벽 3시)로 맞췄다.
+  # 실제 파드 타임존은 배포 후 첫 백업 시각으로 확인이 필요하다.
+  schedule: "0 0 18 * * *"
+  immediate: true
+  backupOwnerReference: cluster
+  cluster:
+    name: fundit-dev-postgres

@@ -1,0 +1,46 @@
+name: Gemini PR Script Test
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - 'scripts/gemini_pr_review.py'
+      - 'tests/**'
+      - '.github/workflows/gemini-pr-test.yml'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: "PR Script Lint & Mock Tests"
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    # 시크릿이나 쓰기 권한이 전혀 없는 격리된 환경에서 PR 코드 테스트 수행
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout PR head (unprivileged)
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Set up Python
+        uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5.4.0
+        with:
+          python-version: '3.11'
+
+      - name: Install test dependencies
+        run: |
+          pip install --no-cache-dir requests==2.32.3
+
+      - name: Syntax validation (py_compile)
+        run: |
+          python -m py_compile scripts/gemini_pr_review.py
+
+      - name: Run Mock Unit Tests
+        run: |
+          python -m unittest discover -s tests -p "test_*.py" -v

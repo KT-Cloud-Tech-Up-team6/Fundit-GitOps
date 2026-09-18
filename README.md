@@ -11,9 +11,10 @@ App Repo: Build/Test → Docker 이미지 빌드 → ECR Push
 GitOps: 설정 검증 → 개발 EC2에서 deploy-dev.sh 실행 → Health Check
 ```
 
-현재 구현은 **Compose 구성, 서버에서 실행할 배포 스크립트, 설정 검증 CI**까지입니다.
-App Repo 이미지 빌드/ECR Push, 저장소 간 태그 갱신, GitHub Actions에서 EC2로 접속하는
-배포 워크플로는 후속 작업입니다. 현재 CI 성공은 실제 배포 성공을 의미하지 않습니다.
+현재 구현은 **Compose 구성, 서버 실행 스크립트, 설정 검증 CI, SSM 수동 배포 workflow**까지입니다.
+배포 workflow는 `main`의 `workflow_dispatch`만 받고, `DEV_DEPLOY_ENABLED=true`와
+`dev-deploy` Environment 설정이 모두 갖춰진 뒤에만 실행됩니다. App Repo 이미지 빌드/ECR Push와
+저장소 간 이미지 주소 갱신은 후속 작업입니다. 현재 CI 성공은 실제 배포 성공을 의미하지 않습니다.
 
 ## 담당 범위와 디렉터리
 
@@ -27,7 +28,11 @@ compose/dev/compose.yaml          Gateway 실행 정의
 compose/dev/images.env            Git으로 관리하는 배포 이미지 주소
 compose/dev/runtime.env.example   서버 런타임 설정의 빈 예제
 scripts/deploy-dev.sh             서버에서 실행하는 배포·검증 스크립트
+scripts/deploy-dev-revision.sh    고정 GitOps revision을 배포하는 서버 launcher 원본
+scripts/dispatch-dev-deploy.py    SSM 대상·이미지·실행 결과 검증
 .github/workflows/validate-dev-compose.yml
+.github/workflows/deploy-dev-ssm.yml
+tests/test_dispatch_dev_deploy.py SSM dispatcher 단위 테스트
 ```
 
 EC2용 Compose는 `compose/dev/`에 둡니다. [PR #11](https://github.com/KT-Cloud-Tech-Up-team6/Fundit-GitOps/pull/11)의
@@ -173,7 +178,6 @@ Compose 검증, 초기 placeholder 배포 차단을 검사합니다. 실제 이�
 그 참조도 파싱·검증합니다. 계정 접근, 이미지 존재 여부, 이미지 실행은 검증하지 않습니다.
 워크플로의 권한은 `contents: read`이며 AWS/GitHub Secret을 요구하지 않습니다.
 
-다음 작업은 이성규 님과 EC2 대상·ECR Pull 권한·SSH 또는 SSM 방식·서버 디렉터리·
-환경변수 공급 방식을 확정하고, 원격 배포 워크플로를 연결하는 것입니다. 이후 App Repo의
-ECR Push 및 `images.env` 갱신을 연결합니다. 변경을 전달하는 GitHub 인증 방식과
-배포 트리거도 함께 정합니다. 현재 파일을 main에 반영해도 원격 배포는 시작되지 않습니다.
+다음 작업은 이성규 님과 EC2 Instance Profile·SSM Agent·ECR Pull 권한·서버 디렉터리·
+환경변수 공급 방식을 확정하는 것입니다. 이후 App Repo의 ECR Push 및 `images.env` 갱신을
+연결합니다. 현재 파일을 main에 반영해도 `DEV_DEPLOY_ENABLED`가 설정되기 전에는 원격 배포가 시작되지 않습니다.
