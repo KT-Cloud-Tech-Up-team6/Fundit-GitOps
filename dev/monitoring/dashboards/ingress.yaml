@@ -1,0 +1,86 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fundit-dashboard-ingress
+  namespace: monitoring
+  labels:
+    grafana_dashboard: "1"
+data:
+  fundit-ingress.json: |
+    {
+      "editable": true,
+      "graphTooltip": 0,
+      "panels": [
+        {
+          "id": 1,
+          "title": "등록된 Ingress 리소스 개수",
+          "type": "stat",
+          "gridPos": { "h": 4, "w": 6, "x": 0, "y": 0 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [
+            { "expr": "count(kube_ingress_info)", "refId": "A" }
+          ]
+        },
+        {
+          "id": 2,
+          "title": "네임스페이스별 Ingress 목록",
+          "type": "table",
+          "gridPos": { "h": 8, "w": 18, "x": 6, "y": 0 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [
+            {
+              "expr": "kube_ingress_info",
+              "format": "table",
+              "instant": true,
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "id": 3,
+          "title": "ALB 컨트롤러 reconcile 처리 건수 (5분)",
+          "type": "timeseries",
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [
+            {
+              "expr": "sum(rate(controller_runtime_reconcile_total{controller=\"ingress\"}[5m])) by (result)",
+              "legendFormat": "{{result}}",
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "id": 4,
+          "title": "ALB 컨트롤러 reconcile 에러 건수 (5분)",
+          "type": "timeseries",
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [
+            {
+              "expr": "sum(rate(controller_runtime_reconcile_errors_total[5m]))",
+              "legendFormat": "에러율",
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "id": 5,
+          "title": "안내",
+          "type": "text",
+          "gridPos": { "h": 4, "w": 24, "x": 0, "y": 16 },
+          "options": {
+            "mode": "markdown",
+            "content": "**실제 ALB 트래픽(요청 수 / 응답시간 / 5xx 비율)은 이 대시보드에 없습니다.** 이 지표들은 AWS CloudWatch에서 관리되며, Grafana CloudWatch 데이터소스 연동이 별도로 필요합니다(IAM 권한 협의 필요, 아직 미착수)."
+          }
+        }
+      ],
+      "refresh": "30s",
+      "schemaVersion": 39,
+      "tags": ["fundit", "ingress", "alb"],
+      "time": { "from": "now-6h", "to": "now" },
+      "timezone": "Asia/Seoul",
+      "title": "Fundit - Ingress 및 ALB 컨트롤러 현황",
+      "uid": "fundit-ingress",
+      "version": 1
+    }

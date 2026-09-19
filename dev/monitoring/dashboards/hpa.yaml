@@ -1,0 +1,85 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fundit-dashboard-hpa
+  namespace: monitoring
+  labels:
+    grafana_dashboard: "1"
+data:
+  fundit-hpa.json: |
+    {
+      "editable": true,
+      "graphTooltip": 0,
+      "panels": [
+        {
+          "id": 1,
+          "title": "HPA별 현재/목표 Replica 수",
+          "type": "timeseries",
+          "gridPos": { "h": 8, "w": 24, "x": 0, "y": 0 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [
+            {
+              "expr": "kube_horizontalpodautoscaler_status_current_replicas",
+              "legendFormat": "{{namespace}}/{{horizontalpodautoscaler}} - 현재",
+              "refId": "A"
+            },
+            {
+              "expr": "kube_horizontalpodautoscaler_status_desired_replicas",
+              "legendFormat": "{{namespace}}/{{horizontalpodautoscaler}} - 목표",
+              "refId": "B"
+            }
+          ]
+        },
+        {
+          "id": 2,
+          "title": "HPA Min/Max 설정",
+          "type": "timeseries",
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [
+            {
+              "expr": "kube_horizontalpodautoscaler_spec_min_replicas",
+              "legendFormat": "{{namespace}}/{{horizontalpodautoscaler}} - min",
+              "refId": "A"
+            },
+            {
+              "expr": "kube_horizontalpodautoscaler_spec_max_replicas",
+              "legendFormat": "{{namespace}}/{{horizontalpodautoscaler}} - max",
+              "refId": "B"
+            }
+          ]
+        },
+        {
+          "id": 3,
+          "title": "스케일링 제한(ScalingLimited) 발생 여부",
+          "type": "timeseries",
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [
+            {
+              "expr": "kube_horizontalpodautoscaler_status_condition{condition=\"ScalingLimited\", status=\"true\"}",
+              "legendFormat": "{{namespace}}/{{horizontalpodautoscaler}}",
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "id": 4,
+          "title": "등록된 HPA 개수",
+          "type": "stat",
+          "gridPos": { "h": 4, "w": 6, "x": 0, "y": 16 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [
+            { "expr": "count(kube_horizontalpodautoscaler_spec_max_replicas)", "refId": "A" }
+          ]
+        }
+      ],
+      "refresh": "30s",
+      "schemaVersion": 39,
+      "tags": ["fundit", "hpa", "autoscaling"],
+      "time": { "from": "now-6h", "to": "now" },
+      "timezone": "Asia/Seoul",
+      "title": "Fundit - HPA 오토스케일링 현황",
+      "uid": "fundit-hpa",
+      "version": 1
+    }
