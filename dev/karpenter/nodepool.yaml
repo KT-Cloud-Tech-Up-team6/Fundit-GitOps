@@ -29,8 +29,11 @@ spec:
   disruption:
     consolidationPolicy: WhenEmptyOrUnderutilized
     consolidateAfter: 5m
-  # 시스템 노드그룹 상시 용량(t3.medium x2 = 4vCPU/8Gi)만큼만 추가로 허용해
-  # 최악의 경우에도 클러스터 전체 용량이 평소의 2배를 넘지 않게 한다
+  # 시스템 노드그룹 상시 용량(4vCPU/8Gi)만큼만 추가 허용하던 기존 2배 상한 때문에,
+  # 특정 노드에 묶이지 않은 파드(admission hook Job 등)가 뜰 새 노드조차 못 만드는
+  # 상황이 생겼다(이슈 #40). cpu 6·memory 12Gi로 올려 여유를 둔다.
+  # requirements에 인스턴스 크기 제약이 없어 Karpenter가 이 한도 안에서 어떤 크기를
+  # 고를지는 예측할 수 없다 — 이 값은 "노드 몇 대분"이 아니라 전체 상한이다.
   limits:
-    cpu: "4"
-    memory: 8Gi
+    cpu: "6"
+    memory: 12Gi
