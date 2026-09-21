@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fundit-gateway-config
+  namespace: dev
+  labels:
+    app.kubernetes.io/name: fundit-gateway
+    app.kubernetes.io/part-of: fundit
+data:
+  AUTH_SERVICE_BASE_URL: http://fundit-auth-svc:8080
+  MEMBER_SERVICE_BASE_URL: http://fundit-member-svc:8080
+  PAYMENT_SERVICE_BASE_URL: http://fundit-payment-svc:8080
+  FULFILLMENT_SERVICE_BASE_URL: http://fundit-fulfillment-svc:8080
+  ORDER_SERVICE_BASE_URL: http://fundit-order-svc:8080
+  PROJECT_SERVICE_BASE_URL: http://fundit-project-svc:8080
+  SEARCH_SERVICE_BASE_URL: http://fundit-search-svc:8080
