@@ -7,6 +7,12 @@ metadata:
     app: fundit-frontend
 spec:
   replicas: 1
+  revisionHistoryLimit: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
   selector:
     matchLabels:
       app: fundit-frontend
@@ -15,11 +21,66 @@ spec:
       labels:
         app: fundit-frontend
     spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: fundit-frontend
-          #image: 899957568205.dkr.ecr.ap-northeast-2.amazonaws.com/fundit-frontend:sha-새로운프론트커밋SHA
-          image: 899957568205.dkr.ecr.ap-northeast-2.amazonaws.com/fundit-frontend:sha-2a35e56f2975ef63dbf8c46afffb67bf2092926d
+          image: 899957568205.dkr.ecr.ap-northeast-2.amazonaws.com/fundit-frontend:sha-247f96d049a3d879150f61662a7ea0114718d22b@sha256:e8176b4ceb244509ffa7c4c63281e815c82c9f5f7046905cd1416d4157f4853e
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
               containerPort: 3000
+              protocol: TCP
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: true
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+            - name: next-cache
+              mountPath: /app/.next/cache
+          startupProbe:
+            httpGet:
+              path: /live
+              port: http
+            periodSeconds: 5
+            failureThreshold: 30
+          readinessProbe:
+            httpGet:
+              path: /live
+              port: http
+            periodSeconds: 5
+            timeoutSeconds: 2
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /live
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+      volumes:
+        - name: tmp
+          emptyDir:
+            sizeLimit: 64Mi
+        - name: next-cache
+          emptyDir:
+            sizeLimit: 256Mi
+      terminationGracePeriodSeconds: 30
