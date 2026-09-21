@@ -5,6 +5,10 @@ metadata:
   namespace: dev
   labels:
     app: fundit-frontend
+  annotations:
+    alb.ingress.kubernetes.io/healthcheck-path: /live
+    alb.ingress.kubernetes.io/healthcheck-port: traffic-port
+    alb.ingress.kubernetes.io/success-codes: "200-399"
 spec:
   type: ClusterIP
   selector:
@@ -13,4 +17,4 @@ spec:
     - name: http
       protocol: TCP
       port: 80
-      targetPort: 3000
+      targetPort: http
