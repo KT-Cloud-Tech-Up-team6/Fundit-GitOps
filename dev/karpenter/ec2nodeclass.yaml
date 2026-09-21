@@ -11,14 +11,14 @@ spec:
   # 재현 가능한 롤아웃이 필요해지면 al2023@vYYYYMMDD로 날짜를 고정한다.
   amiSelectorTerms:
     - alias: al2023@latest
-  # 이슈 #92: fundit-dev-private-sn-1(10.0.10.0/24)이 기존 개별 보조 IP 배치로
-  # 단편화돼 연속된 /28을 못 내줘서 Prefix Delegation 요청이 실패한다(Client.InsufficientCidrBlocks).
-  # fundit-dev-private-sn-2(10.0.20.0/24)만 임시로 쓴다 — 이 AZ에 새 노드가 몰리는 건 감수한다.
-  # 근본 해결(SN1 CIDR 예약)은 별도로 진행한다.
-  # id 고정이라 이 서브넷이 나중에 재생성(Terraform replace)되면 ID가 바뀌어 조용히
-  # 안 맞게 된다 — 근본 해결 때 태그 기반 선택으로 되돌리는 걸 같이 검토한다.
+  # 이슈 #92: SN1(ap-northeast-2a)이 단편화돼 Prefix Delegation용 연속 /28을
+  # 못 내줘서 한동안 SN2(ap-northeast-2c)만 쓰게 고정했었다. Prefix Delegation을
+  # 지금 껐고(Fundit-Infra 이슈 #72) 개별 IP 할당은 SN1도 문제없어서 태그 기반으로
+  # 두 서브넷 다 허용한다. redis·loki·tempo는 SN1(zone a)에 볼륨이 고정돼 있어,
+  # SN2 전용으로는 그 존에 교체 노드를 못 만들어 노드 1대가 계속 Drifted로 남아있었다.
   subnetSelectorTerms:
-    - id: subnet-0914fc324d008c63f
+    - tags:
+        karpenter.sh/discovery: fundit-dev-eks
   securityGroupSelectorTerms:
     - tags:
         aws:eks:cluster-name: fundit-dev-eks
