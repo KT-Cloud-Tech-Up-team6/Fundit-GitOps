@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fundit-frontend
+  namespace: dev
+  labels:
+    app: fundit-frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: fundit-frontend
+  template:
+    metadata:
+      labels:
+        app: fundit-frontend
+    spec:
+      containers:
+        - name: fundit-frontend
+          #image: 899957568205.dkr.ecr.ap-northeast-2.amazonaws.com/fundit-frontend:sha-새로운프론트커밋SHA
+          image: 899957568205.dkr.ecr.ap-northeast-2.amazonaws.com/fundit-frontend:sha-2a35e56f2975ef63dbf8c46afffb67bf2092926d
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 3000
