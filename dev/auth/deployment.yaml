@@ -86,6 +86,11 @@ spec:
                 secretKeyRef:
                   name: fundit-auth-secret
                   key: auth-encryption-key
+            - name: TEST_ACCOUNT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: fundit-auth-secret
+                  key: test-account-password
             - name: PG_STORE_ID
               valueFrom:
                 secretKeyRef:
