@@ -11,9 +11,14 @@ spec:
   # 재현 가능한 롤아웃이 필요해지면 al2023@vYYYYMMDD로 날짜를 고정한다.
   amiSelectorTerms:
     - alias: al2023@latest
+  # 이슈 #92: fundit-dev-private-sn-1(10.0.10.0/24)이 기존 개별 보조 IP 배치로
+  # 단편화돼 연속된 /28을 못 내줘서 Prefix Delegation 요청이 실패한다(Client.InsufficientCidrBlocks).
+  # fundit-dev-private-sn-2(10.0.20.0/24)만 임시로 쓴다 — 이 AZ에 새 노드가 몰리는 건 감수한다.
+  # 근본 해결(SN1 CIDR 예약)은 별도로 진행한다.
+  # id 고정이라 이 서브넷이 나중에 재생성(Terraform replace)되면 ID가 바뀌어 조용히
+  # 안 맞게 된다 — 근본 해결 때 태그 기반 선택으로 되돌리는 걸 같이 검토한다.
   subnetSelectorTerms:
-    - tags:
-        karpenter.sh/discovery: fundit-dev-eks
+    - id: subnet-0914fc324d008c63f
   securityGroupSelectorTerms:
     - tags:
         aws:eks:cluster-name: fundit-dev-eks
