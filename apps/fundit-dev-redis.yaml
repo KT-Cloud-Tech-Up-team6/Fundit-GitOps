@@ -1,0 +1,49 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: fundit-dev-redis
+  namespace: argocd
+spec:
+  project: default
+
+  source:
+    repoURL: https://charts.bitnami.com/bitnami
+    chart: redis
+    #targetRevision: 23.1.2
+    targetRevision: 28.0.15
+    helm:
+      releaseName: fundit-redis
+      values: |
+        architecture: standalone
+
+        # dev 초기 구동용. Auth가 Redis 비밀번호 설정을 지원하면
+        # Secret 기반 인증으로 전환한다.
+        auth:
+          enabled: false
+
+        master:
+          persistence:
+            enabled: true
+            size: 1Gi
+
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 250m
+              memory: 256Mi
+
+          service:
+            type: ClusterIP
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: dev
+
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
