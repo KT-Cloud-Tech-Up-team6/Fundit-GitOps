@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fundit-auth-config
+  namespace: dev
+  labels:
+    app.kubernetes.io/name: fundit-auth
+    app.kubernetes.io/part-of: fundit
+data:
+  REDIS_HOST: fundit-redis-master.dev.svc.cluster.local
+  REDIS_PORT: "6379"
+  MEMBER_SERVICE_BASE_URL: http://fundit-member-svc:8080
+  SPRING_FLYWAY_DEFAULT_SCHEMA: auth
+  SPRING_FLYWAY_SCHEMAS: auth
+  SPRING_FLYWAY_CREATE_SCHEMAS: "true"
+  SPRING_JPA_PROPERTIES_HIBERNATE_DEFAULT_SCHEMA: auth
