@@ -24,6 +24,12 @@ spec:
         - key: karpenter.k8s.aws/instance-generation
           operator: Gt
           values: ["2"]
+        # small(t3a.small 기준 MAX_PODS=8)은 CPU·메모리 여유와 무관하게 파드
+        # 슬롯이 먼저 바닥나 Pending을 반복시킨다(이슈 #45, #47). medium(MAX_PODS=17)
+        # 이상만 쓰게 해 슬롯당 비용도 오히려 낮춘다.
+        - key: karpenter.k8s.aws/instance-size
+          operator: In
+          values: ["medium", "large"]
       # 오래 떠 있는 노드의 커널·설정 드리프트를 방지하기 위한 주기적 교체
       expireAfter: 720h
   disruption:
@@ -35,8 +41,10 @@ spec:
   # DaemonSet·Deployment 파드가 Pending 상태로 남는 문제가 있다(이슈 #45).
   # requirements에 인스턴스 크기 제약이 없어 Karpenter가 어떤 크기를 고를지는
   # 예측할 수 없다 — 이 값은 "노드 몇 대분"이 아니라 전체 상한이다.
-  # cpu는 t3a.small 기준 2대분(4vCPU)을 더해 10으로, memory는 기존에도
-  # 여유가 있던 값이라 비례해 20Gi로 올린다.
+  # t3/t3a 계열은 small·medium·large 모두 2vCPU로 동일해(메모리만 다름),
+  # instance-size 하한(이슈 #47) 적용 시 드리프트 교체 중 헌 노드·새 노드가
+  # 잠깐 같이 떠서 순간적으로 2vCPU를 더 쓴다. cpu 12로 그 여유를 더 둔다.
+  # memory는 기존에도 여유가 있던 값이라 비례해 20Gi로 둔다.
   limits:
-    cpu: "10"
+    cpu: "12"
     memory: 20Gi
