@@ -29,11 +29,14 @@ spec:
   disruption:
     consolidationPolicy: WhenEmptyOrUnderutilized
     consolidateAfter: 5m
-  # 시스템 노드그룹 상시 용량(4vCPU/8Gi)만큼만 추가 허용하던 기존 2배 상한 때문에,
-  # 특정 노드에 묶이지 않은 파드(admission hook Job 등)가 뜰 새 노드조차 못 만드는
-  # 상황이 생겼다(이슈 #40). cpu 6·memory 12Gi로 올려 여유를 둔다.
-  # requirements에 인스턴스 크기 제약이 없어 Karpenter가 이 한도 안에서 어떤 크기를
-  # 고를지는 예측할 수 없다 — 이 값은 "노드 몇 대분"이 아니라 전체 상한이다.
+    budgets:
+      - nodes: "1"
+  # t3a.small(2vCPU/2GiB) 3대로 cpu 한도 6이 소진돼 신규 노드를 못 만들고,
+  # DaemonSet·Deployment 파드가 Pending 상태로 남는 문제가 있다(이슈 #45).
+  # requirements에 인스턴스 크기 제약이 없어 Karpenter가 어떤 크기를 고를지는
+  # 예측할 수 없다 — 이 값은 "노드 몇 대분"이 아니라 전체 상한이다.
+  # cpu는 t3a.small 기준 2대분(4vCPU)을 더해 10으로, memory는 기존에도
+  # 여유가 있던 값이라 비례해 20Gi로 올린다.
   limits:
-    cpu: "6"
-    memory: 12Gi
+    cpu: "10"
+    memory: 20Gi
