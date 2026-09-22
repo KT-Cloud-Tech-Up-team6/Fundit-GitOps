@@ -14,9 +14,10 @@ spec:
   destination:
     server: https://kubernetes.default.svc
     namespace: dev
+  # CNPG 2AZ 분리 마이그레이션(#102) 동안 자동 sync를 잠깐 끈다.
+  # instances 2→1→2 scale과 switchover를 수동으로 조작하는 사이
+  # fundit-root selfHeal이 이 값을 되돌리지 않도록 automated 블록 자체를 뺀다.
+  # 작업 끝나면 이 블록을 원복하는 PR을 올린다.
   syncPolicy:
-    automated:
-      prune: true
-      selfHeal: true
     syncOptions:
       - CreateNamespace=true
