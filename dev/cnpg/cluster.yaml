@@ -6,6 +6,11 @@ metadata:
 spec:
   instances: 2
 
+  # 기본값(unsupervised)이면 스펙 변경 시 오퍼레이터가 Standby 재시작→Switchover→
+  # Primary 재시작을 통제 없이 자동으로 진행한다. stateful 노드그룹 이전 작업 중엔
+  # 각 단계를 kubectl cnpg promote 등으로 직접 승인하기 위해 수동으로 둔다.
+  primaryUpdateStrategy: supervised
+
   # 백엔드 로컬 개발(docker-compose, Testcontainers)이 전부 postgres:16을 쓴다.
   # imageName을 안 정하면 오퍼레이터 1.30.0 기본값(18.4)이 적용돼 버전이 어긋난다.
   imageName: ghcr.io/cloudnative-pg/postgresql:16-system-trixie
