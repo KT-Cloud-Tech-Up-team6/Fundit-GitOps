@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fundit-payment-config
+  namespace: dev
+  labels:
+    app.kubernetes.io/name: fundit-payment
+    app.kubernetes.io/part-of: fundit
+data:
+  KAFKA_BOOTSTRAP_SERVERS: kafka.kafka.svc.cluster.local:9092
+  ORDER_SERVICE_BASE_URL: http://fundit-order-svc:8080
+  FULFILLMENT_SERVICE_BASE_URL: http://fundit-fulfillment-svc:8080
+  ORDER_FUNDING_CLIENT_MODE: http
+  SHIPPING_STATUS_CLIENT_MODE: http
+  MEDIA_S3_BUCKET: fundit-media-dev-team6
+  AWS_REGION: ap-northeast-2
