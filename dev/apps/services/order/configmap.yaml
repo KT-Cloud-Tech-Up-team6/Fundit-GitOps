@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fundit-order-config
+  namespace: dev
+  labels:
+    app.kubernetes.io/name: fundit-order
+    app.kubernetes.io/part-of: fundit
+data:
+  KAFKA_BOOTSTRAP_SERVERS: kafka.kafka.svc.cluster.local:9092
+  PROJECT_SERVICE_BASE_URL: http://fundit-project-svc:8080
+  FULFILLMENT_SERVICE_BASE_URL: http://fundit-fulfillment-svc:8080
+  ORDER_BACKFILL_FUNDING_PROJECT_PUBLIC_ID: "false"
+  SPRING_FLYWAY_DEFAULT_SCHEMA: order_service
+  SPRING_FLYWAY_SCHEMAS: order_service
+  SPRING_FLYWAY_CREATE_SCHEMAS: "true"
+  SPRING_JPA_PROPERTIES_HIBERNATE_DEFAULT_SCHEMA: order_service
