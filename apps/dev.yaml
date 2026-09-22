@@ -7,7 +7,7 @@ spec:
   project: fundit-dev
   source:
     repoURL: https://github.com/KT-Cloud-Tech-Up-team6/Fundit-GitOps.git
-    targetRevision: main
+    targetRevision: test/argocd-image-deploy
     path: dev
     directory:
       recurse: true

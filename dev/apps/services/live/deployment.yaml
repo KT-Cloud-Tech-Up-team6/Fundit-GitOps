@@ -32,7 +32,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: live
-          image: 899957568205.dkr.ecr.ap-northeast-2.amazonaws.com/fundit-backend:sha-live-service-11c61dedb7fe6248d41ab1f00979b80577590301@sha256:c7ac8c6e089716519f824fa6dc11db4e6f707ce09ba2aca1ab37a765083b4917
+          image: 899957568205.dkr.ecr.ap-northeast-2.amazonaws.com/fundit-backend:sha-live-service-ca59e73ff9772a86518515f7eeae2d1b45b5c518@sha256:04020a23f07e14c47166a910f66ad3c278fbb6025662e8e3fd9a9920dc54135b
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
