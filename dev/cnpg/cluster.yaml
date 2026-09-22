@@ -10,6 +10,20 @@ spec:
   # imageName을 안 정하면 오퍼레이터 1.30.0 기본값(18.4)이 적용돼 버전이 어긋난다.
   imageName: ghcr.io/cloudnative-pg/postgresql:16-system-trixie
 
+  # 보안점검 1차 감사 범위. SELECT(read)는 로그량·개인정보 정책 확정 후 별도로 추가한다.
+  postgresql:
+    shared_preload_libraries:
+      - pgaudit
+    parameters:
+      pgaudit.log: "write,ddl,role,misc"
+      # 바인드 파라미터에 비밀번호·개인정보가 남지 않도록 원문 값은 기록하지 않는다.
+      pgaudit.log_parameter: "off"
+      # DML 감사로그에 대상 relation 정보를 남기되 시스템 카탈로그 조회 잡음은 제외한다.
+      pgaudit.log_relation: "on"
+      pgaudit.log_catalog: "off"
+      log_connections: "on"
+      log_disconnections: "on"
+
   storage:
     size: 10Gi
     storageClass: gp3-retain

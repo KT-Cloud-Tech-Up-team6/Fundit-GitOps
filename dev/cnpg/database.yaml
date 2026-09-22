@@ -1,0 +1,16 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: Database
+metadata:
+  name: fundit-dev-postgres-app-database
+  namespace: dev
+spec:
+  cluster:
+    name: fundit-dev-postgres
+  name: app
+  owner: app
+  ensure: present
+  # Argo CD prune 또는 리소스 제거가 실제 app DB 삭제로 이어지지 않게 보존한다.
+  databaseReclaimPolicy: retain
+  extensions:
+    - name: pgaudit
+      ensure: present
