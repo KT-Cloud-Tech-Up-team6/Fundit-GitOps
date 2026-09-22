@@ -14,3 +14,5 @@ data:
   ORDER_SERVICE_BASE_URL: http://fundit-order-svc:8080
   PROJECT_SERVICE_BASE_URL: http://fundit-project-svc:8080
   SEARCH_SERVICE_BASE_URL: http://fundit-search-svc:8080
+  NOTIFICATION_SERVICE_BASE_URL: http://fundit-notification-svc:8080
+  LIVE_SERVICE_BASE_URL: http://fundit-live-svc:8080

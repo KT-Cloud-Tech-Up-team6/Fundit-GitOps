@@ -1,10 +1,10 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: fundit-gateway
+  name: fundit-live
   namespace: dev
   labels:
-    app.kubernetes.io/name: fundit-gateway
+    app.kubernetes.io/name: fundit-live
     app.kubernetes.io/part-of: fundit
 spec:
   replicas: 1
@@ -16,11 +16,11 @@ spec:
       maxSurge: 1
   selector:
     matchLabels:
-      app.kubernetes.io/name: fundit-gateway
+      app.kubernetes.io/name: fundit-live
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: fundit-gateway
+        app.kubernetes.io/name: fundit-live
         app.kubernetes.io/part-of: fundit
     spec:
       automountServiceAccountToken: false
@@ -31,8 +31,8 @@ spec:
         seccompProfile:
           type: RuntimeDefault
       containers:
-        - name: gateway
-          image: 899957568205.dkr.ecr.ap-northeast-2.amazonaws.com/fundit-backend:sha-gateway-service-ae1e0320e466e18e380cf76d7e9fd8c292a35cd6@sha256:c2ff35fd46fb2e183556270ead8f8a9efd125e004d90a60990f2a0baa654751a
+        - name: live
+          image: 899957568205.dkr.ecr.ap-northeast-2.amazonaws.com/fundit-backend:sha-live-service-11c61dedb7fe6248d41ab1f00979b80577590301@sha256:c7ac8c6e089716519f824fa6dc11db4e6f707ce09ba2aca1ab37a765083b4917
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
@@ -40,10 +40,37 @@ spec:
               protocol: TCP
           envFrom:
             - configMapRef:
-                name: fundit-gateway-config
+                name: fundit-live-config
           env:
             - name: SPRING_PROFILES_ACTIVE
               value: dev
+            - name: DB_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: fundit-dev-postgres-app
+                  key: host
+            - name: DB_PORT
+              valueFrom:
+                secretKeyRef:
+                  name: fundit-dev-postgres-app
+                  key: port
+            - name: DB_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: fundit-dev-postgres-app
+                  key: dbname
+            - name: DB_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: fundit-dev-postgres-app
+                  key: username
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: fundit-dev-postgres-app
+                  key: password
+            - name: SPRING_DATASOURCE_URL
+              value: jdbc:postgresql://$(DB_HOST):$(DB_PORT)/$(DB_NAME)?currentSchema=live
             - name: INTERNAL_API_KEY
               valueFrom:
                 secretKeyRef:
