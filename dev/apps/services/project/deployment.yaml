@@ -32,7 +32,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: project
-          image: 899957568205.dkr.ecr.ap-northeast-2.amazonaws.com/fundit-backend:sha-project-service-a82f82c6e052ee286a758314b111f00608c03c3d@sha256:f4a4f2758365d06b0a7d3ef49379aae0b0ebc8177c2fb415702533206e0d6989
+          image: 899957568205.dkr.ecr.ap-northeast-2.amazonaws.com/fundit-backend:sha-project-service-955d07ca9d29a9c0801ee1b9fe53333a18145250@sha256:ed34cde52acc4aea807f2cb6bc04894d055beb7cc08eb412517858f3684e209d
           imagePullPolicy: IfNotPresent
           ports:
             - name: http

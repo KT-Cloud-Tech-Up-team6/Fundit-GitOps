@@ -32,7 +32,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: search
-          image: 899957568205.dkr.ecr.ap-northeast-2.amazonaws.com/fundit-backend:sha-search-service-11c61dedb7fe6248d41ab1f00979b80577590301@sha256:1831d4d3f9757039ccd2506d14e4788a11a89c32512f376944b6db5ce22dd442
+          image: 899957568205.dkr.ecr.ap-northeast-2.amazonaws.com/fundit-backend:sha-search-service-7dd5bd525f5080548f4e2fd7fee835a7fa0e92a9@sha256:d07fde27f04287e81dd8dc03cb9a533161dddc3a5cf5bc4d3ebac51c4635db98
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
