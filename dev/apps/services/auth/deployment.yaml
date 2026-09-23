@@ -32,7 +32,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: auth
-          image: 899957568205.dkr.ecr.ap-northeast-2.amazonaws.com/fundit-backend:sha-auth-service-cb088fcc007855cd112c888c8a557652646466aa@sha256:85a54493342d4e804738d1826817a7c792152962ff412adf94e38b3347e1c044
+          image: 899957568205.dkr.ecr.ap-northeast-2.amazonaws.com/fundit-backend
           imagePullPolicy: IfNotPresent
           ports:
             - name: http

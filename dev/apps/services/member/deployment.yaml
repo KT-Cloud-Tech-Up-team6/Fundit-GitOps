@@ -32,7 +32,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: member
-          image: 899957568205.dkr.ecr.ap-northeast-2.amazonaws.com/fundit-backend:sha-member-service-4a8c6ae36396e52587444daea67ef0a2a5195b6d@sha256:31a3af277047a0e7f427be67b00e8bcb11b96613beff76afe9392ce4fc73333c
+          image: 899957568205.dkr.ecr.ap-northeast-2.amazonaws.com/fundit-backend
           imagePullPolicy: IfNotPresent
           ports:
             - name: http

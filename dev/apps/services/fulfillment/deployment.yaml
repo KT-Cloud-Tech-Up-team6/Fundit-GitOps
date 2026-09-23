@@ -32,7 +32,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: fulfillment
-          image: 899957568205.dkr.ecr.ap-northeast-2.amazonaws.com/fundit-backend:sha-fulfillment-service-9b8db1bf55bf8da762ad2f62f6c63706ecedbfc3@sha256:1d2044d254d9fcb1d3eeb1622b0d155a3b2db29d88f2f17f371ef2d7e1ff453f
+          image: 899957568205.dkr.ecr.ap-northeast-2.amazonaws.com/fundit-backend
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
