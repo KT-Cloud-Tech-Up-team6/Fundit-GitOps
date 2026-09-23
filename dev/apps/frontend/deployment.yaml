@@ -32,7 +32,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: fundit-frontend
-          image: 899957568205.dkr.ecr.ap-northeast-2.amazonaws.com/fundit-frontend:sha-a808c82238f44eba95af4db90a38d4945cb60638@sha256:a1283f0993a999dbf6deb100d80a34eea5213fa94aa95fee05d24f86728ee6b4
+          image: 899957568205.dkr.ecr.ap-northeast-2.amazonaws.com/fundit-frontend:sha-e4feb283895512eb0b8c3042982f94d5bf240c65@sha256:fbbbe0feacdb25b2b6fceec7700f6a42e8b9fcbc7aeb87062c20d57b490633cd
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
