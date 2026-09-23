@@ -1,0 +1,18 @@
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: fundit-payment-secret
+  namespace: dev
+spec:
+  refreshInterval: 1h
+  secretStoreRef:
+    name: aws-secrets-manager
+    kind: SecretStore
+  target:
+    name: fundit-payment-secret
+    creationPolicy: Owner
+  data:
+    - secretKey: payment-encryption-key
+      remoteRef: {key: fundit/dev/payment, property: payment-encryption-key}
+    - secretKey: toss-widget-secret-key
+      remoteRef: {key: fundit/dev/payment, property: toss-widget-secret-key}

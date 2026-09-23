@@ -1,0 +1,16 @@
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: fundit-backend-secrets
+  namespace: dev
+spec:
+  refreshInterval: 1h
+  secretStoreRef:
+    name: aws-secrets-manager
+    kind: SecretStore
+  target:
+    name: fundit-backend-secrets
+    creationPolicy: Owner
+  data:
+    - secretKey: internal-api-key
+      remoteRef: {key: fundit/dev/backend, property: internal-api-key}
