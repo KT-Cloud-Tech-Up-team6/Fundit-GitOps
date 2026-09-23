@@ -30,7 +30,7 @@ Payment, Order, Fulfillment가 동일한 `internal-api-key`를 사용해야 합�
 
 환불 증빙 Presigned URL 기능은 `fundit-backend-sa`를 사용합니다.
 Infra #80 / PR #105에서 `FunditBackendS3Role-fundit-dev-eks`가 생성된 뒤 배포해야 합니다.
-현재 이 ServiceAccount를 참조하는 Deployment는 Payment뿐입니다.
+이 ServiceAccount는 Payment와 Project Deployment가 함께 사용합니다.
 
 ## Gateway 경로
 

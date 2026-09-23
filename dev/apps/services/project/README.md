@@ -17,7 +17,10 @@ Secret의 실제 값은 Git과 이 문서에 기록하지 않습니다.
 
 Project의 미디어 업로드 URL 발급과 객체 확인에는 S3 접근 권한이 필요합니다.
 자격증명을 환경변수나 Secret으로 직접 주입하지 않고 AWS SDK 기본 자격증명 체계를 사용합니다.
-실제 미디어 기능 검증 전에 AWS 담당자와 Pod Identity 또는 IRSA 및 최소 권한 정책을 확인합니다.
+S3 권한은 IRSA로 받습니다.
+Deployment는 `fundit-backend-sa`를 사용합니다.
+이 ServiceAccount는 `FunditBackendS3Role-fundit-dev-eks`와 연결됩니다.
+`fundit-backend-sa`는 `dev/apps/services/payment/serviceaccount.yaml`에 정의되어 있습니다.
 
 ## Gateway 경로
 
