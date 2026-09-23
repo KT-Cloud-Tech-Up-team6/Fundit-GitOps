@@ -41,5 +41,5 @@ Payment 배포 후 `/api/v1/payments/**`, `/api/v1/refunds/**`, `/api/v1/settlem
 
 Backend `develop`의 성공한 payment-service CI/CD 결과를 tag와 digest로 고정합니다.
 
-- commit: `ce52dd63dac932cb14393bfc1567862d13605934`
-- image digest: `sha256:9ff4b38964dd60fce6ae049a94af58d80c5fb187241ef6520ce527f66fa162db`
+- commit: `7dd5bd525f5080548f4e2fd7fee835a7fa0e92a9`
+- image digest: `sha256:e7a821e63fb4bbe148b541e5ce23507d426f4c19ec0ab732b24b98d13abcad33`
