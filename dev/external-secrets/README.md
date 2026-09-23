@@ -24,6 +24,10 @@ ExternalSecret의 `refreshInterval`이 1시간이라 최대 1시간 뒤 Kubernet
 
 ## 주의
 
-`creationPolicy: Owner`라서 ExternalSecret을 지우면 Kubernetes Secret도 함께 지워집니다.
-ExternalSecret 파일(`auth.yaml` `member.yaml` `payment.yaml` `backend.yaml`)을 삭제하면 Argo CD prune으로 해당 Secret도 지워지고 이후 재시작하는 파드는 기동에 실패합니다.
+`creationPolicy: Orphan`이라 ExternalSecret은 Secret이 없으면 만들고 있으면 ExternalSecret에 적힌 키로 Secret data를 바꿉니다.
+kubectl로 넣은 다른 키는 지워지므로 키를 추가할 때는 AWS와 ExternalSecret에 함께 추가합니다.
+Secret에 ownerReference를 붙이지 않아 Argo CD prune이나 브랜치 전환으로 ExternalSecret이 지워져도 Secret은 지워지지 않습니다.
+ExternalSecret이 없는 동안 Secret은 AWS 값을 받지 않고 마지막 값을 유지합니다.
+AWS에서 원격 키를 지워도 Secret은 마지막 값을 유지합니다(`deletionPolicy` 기본값 `Retain`).
+더 이상 쓰지 않는 Secret은 ExternalSecret을 지운 뒤 kubectl로 직접 지웁니다.
 키는 `data[].remoteRef`로 하나씩 지정합니다. `dataFrom.find`는 ESO Role에 권한이 없어 동작하지 않습니다.

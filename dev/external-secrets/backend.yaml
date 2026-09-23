@@ -10,7 +10,7 @@ spec:
     kind: SecretStore
   target:
     name: fundit-backend-secrets
-    creationPolicy: Owner
+    creationPolicy: Orphan
   data:
     - secretKey: internal-api-key
       remoteRef: {key: fundit/dev/backend, property: internal-api-key}

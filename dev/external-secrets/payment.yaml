@@ -10,7 +10,7 @@ spec:
     kind: SecretStore
   target:
     name: fundit-payment-secret
-    creationPolicy: Owner
+    creationPolicy: Orphan
   data:
     - secretKey: payment-encryption-key
       remoteRef: {key: fundit/dev/payment, property: payment-encryption-key}

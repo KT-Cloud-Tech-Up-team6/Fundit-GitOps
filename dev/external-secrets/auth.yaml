@@ -10,7 +10,7 @@ spec:
     kind: SecretStore
   target:
     name: fundit-auth-secret
-    creationPolicy: Owner
+    creationPolicy: Orphan
   data:
     - secretKey: auth-encryption-key
       remoteRef: {key: fundit/dev/auth, property: auth-encryption-key}
