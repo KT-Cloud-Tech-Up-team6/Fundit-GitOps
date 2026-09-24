@@ -8,10 +8,12 @@
 `dev/fundit-ai-cuesheet-secret`에 아래 키를 안전한 비밀 관리 경로로 등록해야 합니다.
 
 - `cuesheet-ai-token`: AI의 `CUESHEET_AI_TOKEN`이며 향후 Live의 `LIVE_CUESHEET_AI_TOKEN`과 같은 값
-- `vertexai-key`: 현재 이미지가 Gemini Vertex express mode에 사용하는 `vertexaiKEY`
+- `vertexai-service-account-json`: AI팀이 교체해 전달한 서비스 계정 JSON 전체를 현재 이미지의 `vertexaijsonl`에 주입
 
 두 값 중 하나라도 비어 있으면 컨테이너가 기동을 중단합니다. Secret 원문은 Git, PR, 로그에 기록하지 않습니다.
-`model_no1=gemini-2.5-flash`는 현재 코드의 기본값을 명시한 초안이며, AI팀이 선택한 dev 모델과 접근 권한을 병합 전에 확인해야 합니다.
+기존에 채팅으로 전달된 서비스 계정 개인키는 사용하지 않습니다. AI팀이 해당 키를 폐기하고 새 키를 안전한 경로로 전달한 뒤 등록해야 합니다.
+`model_no1=gemini-3.7-flash`, `VERTEX_LOCATION=global`은 AI 레포 PR #8의 실제 호출 검증 결과에 맞춥니다.
+`vertexaiKEY`는 이미지 코드의 express mode 폴백용 선택값이며 이 dev 배포에는 주입하지 않습니다.
 
 이미지의 BE 연동 API는 생성 결과를 동기 응답으로 돌려주고 `/app/projects`의 생성 파일은 휘발성으로 취급합니다.
 따라서 해당 경로에 크기 제한이 있는 `emptyDir`를 연결했습니다. Pod 재시작 시 파일은 사라지며,

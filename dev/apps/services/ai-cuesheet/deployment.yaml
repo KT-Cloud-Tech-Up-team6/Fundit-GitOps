@@ -30,7 +30,7 @@ spec:
           command: ["/bin/sh", "-ec"]
           args:
             - |
-              if [ -z "${CUESHEET_AI_TOKEN:-}" ] || [ -z "${vertexaiKEY:-}" ]; then
+              if [ -z "${CUESHEET_AI_TOKEN:-}" ] || [ -z "${vertexaijsonl:-}" ]; then
                 echo "required Cuesheet credentials are empty" >&2
                 exit 1
               fi
@@ -48,11 +48,11 @@ spec:
                 secretKeyRef:
                   name: fundit-ai-cuesheet-secret
                   key: cuesheet-ai-token
-            - name: vertexaiKEY
+            - name: vertexaijsonl
               valueFrom:
                 secretKeyRef:
                   name: fundit-ai-cuesheet-secret
-                  key: vertexai-key
+                  key: vertexai-service-account-json
           volumeMounts:
             - name: projects
               mountPath: /app/projects

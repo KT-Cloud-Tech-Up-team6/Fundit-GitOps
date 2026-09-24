@@ -8,4 +8,5 @@ metadata:
     app.kubernetes.io/part-of: fundit
 data:
   PORT: "8420"
-  model_no1: gemini-2.5-flash
+  model_no1: gemini-3.7-flash
+  VERTEX_LOCATION: global

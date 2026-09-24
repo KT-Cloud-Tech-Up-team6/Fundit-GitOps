@@ -8,5 +8,5 @@ resources:
 
 images:
   - name: 899957568205.dkr.ecr.ap-northeast-2.amazonaws.com/fundit-ai-cuesheet
-    newTag: sha-dd04ade55b5c97e48d63ce8fbb1f014528c7e59f
-    digest: sha256:0878155b45756b060330cbc73be78a1fa5a8d8cfd4a1a4d2fea3cf5a763a80a6
+    newTag: sha-c27094ae8796dc78b4a6bca6f980ee417f2a1de6
+    digest: sha256:efc944116dab6e7aac663241f6fbe819cd8714dcb36c331bfe60308da616fac1
