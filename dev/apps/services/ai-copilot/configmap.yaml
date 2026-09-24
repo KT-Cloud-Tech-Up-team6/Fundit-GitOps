@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fundit-ai-copilot-config
+  namespace: dev
+  labels:
+    app.kubernetes.io/name: fundit-ai-copilot
+    app.kubernetes.io/part-of: fundit
+data:
+  GEMINI_MODEL: gemini-3.5-flash-lite
+  O_PART_REPHRASE: "0"
+  LIVE_KNOWLEDGE_PATH: /data/live_knowledge.json
+  RUNTIME_DIR: /data/runtime
