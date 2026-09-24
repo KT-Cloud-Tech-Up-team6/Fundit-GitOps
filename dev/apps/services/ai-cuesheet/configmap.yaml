@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fundit-ai-cuesheet-config
+  namespace: dev
+  labels:
+    app.kubernetes.io/name: fundit-ai-cuesheet
+    app.kubernetes.io/part-of: fundit
+data:
+  PORT: "8420"
+  model_no1: gemini-3.7-flash
+  VERTEX_LOCATION: global
