@@ -32,7 +32,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: gateway
-          image: 899957568205.dkr.ecr.ap-northeast-2.amazonaws.com/fundit-backend:sha-gateway-service-ae1e0320e466e18e380cf76d7e9fd8c292a35cd6@sha256:c2ff35fd46fb2e183556270ead8f8a9efd125e004d90a60990f2a0baa654751a
+          image: 899957568205.dkr.ecr.ap-northeast-2.amazonaws.com/fundit-backend
           imagePullPolicy: IfNotPresent
           ports:
             - name: http

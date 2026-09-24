@@ -1,0 +1,12 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - configmap.yaml
+  - deployment.yaml
+  - service.yaml
+
+images:
+  - name: 899957568205.dkr.ecr.ap-northeast-2.amazonaws.com/fundit-backend
+    newTag: sha-member-service-e8b5e198868911c9ed56003c85ba3616450e0525
+    digest: sha256:b97d15048c516d5be4d476911d155e119accee08dcaae2d4945d61cb5875e8f0
