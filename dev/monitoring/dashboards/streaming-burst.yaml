@@ -1,0 +1,83 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fundit-dashboard-streaming-burst
+  namespace: monitoring
+  labels:
+    grafana_dashboard: "1"
+data:
+  fundit-streaming-burst.json: |
+    {
+      "editable": true,
+      "graphTooltip": 0,
+      "panels": [
+        {
+          "id": 1,
+          "title": "리버퍼링 비율 (목표 1% 이하)",
+          "type": "timeseries",
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": { "defaults": { "unit": "percentunit" } },
+          "targets": [
+            { "expr": "avg(stream_rebuffer_ratio)", "legendFormat": "리버퍼링 비율", "refId": "A" }
+          ]
+        },
+        {
+          "id": 2,
+          "title": "방송 시작 지연 p95 (목표 30초 이내)",
+          "type": "timeseries",
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": { "defaults": { "unit": "s" } },
+          "targets": [
+            {
+              "expr": "histogram_quantile(0.95, rate(stream_start_latency_seconds_bucket[5m]))",
+              "legendFormat": "p95 지연",
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "id": 3,
+          "title": "동시 시청자 수",
+          "type": "timeseries",
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [
+            { "expr": "sum(live_viewer_concurrent_count)", "legendFormat": "동시 시청자", "refId": "A" }
+          ]
+        },
+        {
+          "id": 4,
+          "title": "펀딩 오픈 대기열 깊이",
+          "type": "timeseries",
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [
+            { "expr": "sum(campaign_queue_depth)", "legendFormat": "대기열 깊이", "refId": "A" }
+          ]
+        },
+        {
+          "id": 5,
+          "title": "캠페인 잔여 재고수량",
+          "type": "timeseries",
+          "gridPos": { "h": 8, "w": 24, "x": 0, "y": 16 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [
+            {
+              "expr": "campaign_inventory_remaining",
+              "legendFormat": "{{campaign}}",
+              "refId": "A"
+            }
+          ]
+        }
+      ],
+      "refresh": "30s",
+      "schemaVersion": 39,
+      "tags": ["fundit", "streaming", "burst-traffic"],
+      "time": { "from": "now-6h", "to": "now" },
+      "timezone": "Asia/Seoul",
+      "title": "Fundit - 라이브 스트리밍 품질 · 버스트 트래픽",
+      "uid": "fundit-streaming-burst",
+      "version": 1
+    }

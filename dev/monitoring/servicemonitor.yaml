@@ -1,0 +1,18 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: fundit-backend
+  namespace: monitoring
+  labels:
+    release: kube-prometheus-stack   
+spec:
+  namespaceSelector:
+    matchNames:
+      - dev                          # 백엔드 서비스가 실제 배포될 네임스페이스
+  selector:
+    matchLabels:
+      app.kubernetes.io/part-of: fundit   # 가정값 - 백엔드 K8s Service 라벨 확정 후 수정 필요
+  endpoints:
+    - port: http                    # 가정값 - 백엔드 Service의 포트 이름 확정 후 수정 필요
+      path: /actuator/prometheus
+      interval: 15s
