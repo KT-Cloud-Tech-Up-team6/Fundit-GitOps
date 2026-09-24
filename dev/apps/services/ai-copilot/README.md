@@ -9,7 +9,7 @@
 - `gemini-api-key`: Copilot의 `GEMINI_API_KEY`
 - `api-token`: Copilot의 `API_TOKEN`이자 Live Backend의 `LIVE_AI_TOKEN`
 
-Secret 원문은 Git, PR, 로그에 기록하지 않습니다. `API_TOKEN`을 비워 두면 AI 서버 인증이 비활성화되므로 빈 값으로 배포하지 않습니다.
+Secret 원문은 Git, PR, 로그에 기록하지 않습니다. `API_TOKEN`을 비워 두면 AI 서버 인증이 비활성화되므로 컨테이너 시작 시 두 필수 키의 비어 있음 여부를 검사하고, 비어 있으면 기동을 중단합니다.
 
 `/data`는 `gp3-retain` PVC에 연결하고 `LIVE_KNOWLEDGE_PATH`와 `RUNTIME_DIR`을 그 아래로 지정합니다.
 EBS `ReadWriteOnce` 볼륨을 단일 Pod에서 사용하므로 업데이트 전략은 `Recreate`입니다. Pod 재시작 후 `/data/live_knowledge.json`의 답변 보존을 실제로 확인합니다.

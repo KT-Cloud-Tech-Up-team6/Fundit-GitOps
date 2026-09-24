@@ -33,6 +33,14 @@ spec:
         - name: ai-copilot
           image: 899957568205.dkr.ecr.ap-northeast-2.amazonaws.com/fundit-ai-copilot
           imagePullPolicy: IfNotPresent
+          command: ["/bin/sh", "-ec"]
+          args:
+            - |
+              if [ -z "${GEMINI_API_KEY:-}" ] || [ -z "${API_TOKEN:-}" ]; then
+                echo "required AI credentials are empty" >&2
+                exit 1
+              fi
+              exec uvicorn api.main:app --host 0.0.0.0 --port 8080
           ports:
             - name: http
               containerPort: 8080
