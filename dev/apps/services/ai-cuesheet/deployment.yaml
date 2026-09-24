@@ -1,0 +1,101 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fundit-ai-cuesheet
+  namespace: dev
+  labels:
+    app.kubernetes.io/name: fundit-ai-cuesheet
+    app.kubernetes.io/part-of: fundit
+spec:
+  replicas: 1
+  revisionHistoryLimit: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: fundit-ai-cuesheet
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: fundit-ai-cuesheet
+        app.kubernetes.io/part-of: fundit
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        fsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: ai-cuesheet
+          image: 899957568205.dkr.ecr.ap-northeast-2.amazonaws.com/fundit-ai-cuesheet
+          imagePullPolicy: IfNotPresent
+          command: ["/bin/sh", "-ec"]
+          args:
+            - |
+              if [ -z "${CUESHEET_AI_TOKEN:-}" ] || [ -z "${vertexaiKEY:-}" ]; then
+                echo "required Cuesheet credentials are empty" >&2
+                exit 1
+              fi
+              exec uvicorn run:app --host 0.0.0.0 --port "${PORT:-8420}"
+          ports:
+            - name: http
+              containerPort: 8420
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: fundit-ai-cuesheet-config
+          env:
+            - name: CUESHEET_AI_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: fundit-ai-cuesheet-secret
+                  key: cuesheet-ai-token
+            - name: vertexaiKEY
+              valueFrom:
+                secretKeyRef:
+                  name: fundit-ai-cuesheet-secret
+                  key: vertexai-key
+          volumeMounts:
+            - name: projects
+              mountPath: /app/projects
+            - name: tmp
+              mountPath: /tmp
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: true
+          startupProbe:
+            httpGet:
+              path: /docs
+              port: http
+            periodSeconds: 5
+            failureThreshold: 30
+          readinessProbe:
+            httpGet:
+              path: /docs
+              port: http
+            periodSeconds: 5
+            timeoutSeconds: 2
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /docs
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: "1"
+              memory: 1Gi
+      volumes:
+        - name: projects
+          emptyDir:
+            sizeLimit: 1Gi
+        - name: tmp
+          emptyDir:
+            sizeLimit: 128Mi
+      terminationGracePeriodSeconds: 30

@@ -1,0 +1,12 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - configmap.yaml
+  - deployment.yaml
+  - service.yaml
+
+images:
+  - name: 899957568205.dkr.ecr.ap-northeast-2.amazonaws.com/fundit-ai-cuesheet
+    newTag: sha-dd04ade55b5c97e48d63ce8fbb1f014528c7e59f
+    digest: sha256:0878155b45756b060330cbc73be78a1fa5a8d8cfd4a1a4d2fea3cf5a763a80a6
