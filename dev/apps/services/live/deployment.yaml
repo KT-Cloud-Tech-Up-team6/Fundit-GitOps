@@ -76,11 +76,6 @@ spec:
                 secretKeyRef:
                   name: fundit-backend-secrets
                   key: internal-api-key
-            - name: LIVE_AI_TOKEN
-              valueFrom:
-                secretKeyRef:
-                  name: fundit-ai-copilot-secret
-                  key: api-token
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:

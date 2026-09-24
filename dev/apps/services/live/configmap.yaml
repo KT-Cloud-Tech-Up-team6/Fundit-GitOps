@@ -9,8 +9,6 @@ metadata:
 data:
   KAFKA_BOOTSTRAP_SERVERS: kafka.kafka.svc.cluster.local:9092
   LIVE_IVS_MODE: stub
-  LIVE_AI_MODE: http
-  LIVE_AI_BASE_URL: http://fundit-ai-copilot-svc:8080/api/v1/ai
   SPRING_FLYWAY_DEFAULT_SCHEMA: live
   SPRING_FLYWAY_SCHEMAS: live
   SPRING_FLYWAY_CREATE_SCHEMAS: "true"

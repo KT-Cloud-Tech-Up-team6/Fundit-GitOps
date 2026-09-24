@@ -1,7 +1,8 @@
 # Copilot AI dev 배포 전제조건
 
 이미지는 `fundit-ai-copilot` ECR의 검증 대상 태그와 digest로 고정합니다.
-외부 Ingress는 만들지 않으며 Backend Live만 내부 Service의 `/api/v1/ai` 경로를 호출합니다.
+외부 Ingress는 만들지 않으며, 향후 Backend Live가 내부 Service의 `/api/v1/ai` 경로를 호출합니다.
+이번 PR은 Live의 `LIVE_AI_MODE`를 변경하지 않습니다. Live 실연동에는 별도 Cuesheet AI 주소·토큰까지 준비한 뒤 5개 환경변수를 동시에 반영해야 합니다.
 
 병합 전에 `dev/fundit-ai-copilot-secret`을 안전한 비밀 관리 경로로 준비해야 합니다.
 

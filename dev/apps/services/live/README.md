@@ -7,16 +7,9 @@ Flyway가 스키마와 이력 테이블을 생성하며 다른 서비스의 migr
 
 - `dev/fundit-dev-postgres-app`: CNPG가 관리하는 DB 접속 Secret
 - `dev/fundit-backend-secrets`: `internal-api-key` 키
-- `dev/fundit-ai-copilot-secret`: `api-token` 키 (Copilot의 `API_TOKEN`과 동일한 값)
 - `kafka/kafka`: `kafka.kafka.svc.cluster.local:9092`에서 접근 가능한 Kafka
 
 Secret의 실제 값은 Git과 이 문서에 기록하지 않습니다.
-
-## Copilot AI
-
-`LIVE_AI_MODE=http`으로 Copilot 내부 Service(`http://fundit-ai-copilot-svc:8080/api/v1/ai`)를 호출합니다.
-Copilot Secret과 Pod가 준비되기 전에는 이 변경을 main에 병합하지 마세요.
-인증된 실제 요청으로 AI 연동을 확인해야 하며, Copilot의 `/health` 응답만으로 Gemini 호출 성공을 판단하지 않습니다.
 
 ## IVS 및 Kafka
 
