@@ -1,0 +1,224 @@
+name: Update GitOps image
+
+# 배포 흐름:
+# Fundit-FE CI가 ECR에 이미지를 push
+#   → Frontend 전용 dispatch workflow 호출
+#   → 이 공통 workflow가 입력값과 수정 대상을 검증
+#   → GitOps main의 Frontend kustomization.yaml만 갱신
+#   → Argo CD가 새 Git commit을 감지하여 배포
+#
+# 서비스별 dispatch workflow만 호출하는 공통 workflow입니다.
+# 호출자는 이미지 이름이나 GitOps 수정 경로를 직접 전달할 수 없습니다.
+on:
+  workflow_call:
+    inputs:
+      # allow-list의 키입니다. 이 값으로 이미지와 수정 파일을 선택하지만,
+      # 실제 외부 호출자는 Frontend 전용 workflow가 고정한 frontend만 전달합니다.
+      service:
+        description: Allowed GitOps service identifier
+        required: true
+        type: string
+      # 사람이 commit과 연결해 확인할 수 있는 이미지 이름입니다.
+      # 예: sha-267c6d3e5317abc4f30588a5b6da1a28dc5797b8
+      image_tag:
+        description: Immutable image tag in sha-<commit> form
+        required: true
+        type: string
+      # ECR에 push된 이미지 내용 자체를 식별하는 immutable SHA-256 digest입니다.
+      # 같은 tag가 나중에 재사용되어도 이 값이 있으면 실제 배포 이미지는 고정됩니다.
+      image_digest:
+        description: Immutable OCI image digest
+        required: true
+        type: string
+      # FE 소스의 정확한 Git commit SHA입니다.
+      # tag와 함께 검증해 다른 commit의 이미지를 잘못 배포하지 않게 합니다.
+      source_sha:
+        description: Source repository commit SHA
+        required: true
+        type: string
+# GitOps 파일을 수정하는 권한은 외부 서비스 CI가 아닌 이 workflow에만 둡니다.
+permissions:
+  contents: write
+
+# 여러 서비스가 동시에 main을 갱신해도 push 충돌이나 변경 유실이 없도록 직렬화합니다.
+concurrency:
+  group: gitops-image-update-main
+  cancel-in-progress: false
+
+jobs:
+  update-image:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      # 호출 workflow의 ref가 아닌 배포 대상인 GitOps main을 기준으로 수정합니다.
+      - name: Checkout GitOps main
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: main
+
+      # 서비스 식별자와 허용된 ECR image / 수정 파일을 여기에서만 매핑합니다.
+      # 이후 BE, AI 추가 시에도 새 서비스 항목을 명시적으로 allow-list에 넣습니다.
+      - name: Resolve allowed image target
+        id: target
+        env:
+          SERVICE: ${{ inputs.service }}
+        run: |
+          case "$SERVICE" in
+            frontend)
+              # 이 두 값은 입력값이 아니라 GitOps 코드에 고정된 allow-list입니다.
+              # 따라서 FE 호출자가 다른 ECR image나 임의 파일 경로를 지정할 수 없습니다.
+              echo "image=899957568205.dkr.ecr.ap-northeast-2.amazonaws.com/fundit-frontend" >> "$GITHUB_OUTPUT"
+              echo "file=dev/apps/frontend/kustomization.yaml" >> "$GITHUB_OUTPUT"
+              ;;
+            *)
+              echo "::error::Unsupported service: $SERVICE"
+              exit 1
+              ;;
+          esac
+
+      # tag, digest, 원본 commit의 형식을 함께 검증해 서로 다른 이미지 배포를 방지합니다.
+      - name: Validate image inputs
+        env:
+          IMAGE_TAG: ${{ inputs.image_tag }}
+          IMAGE_DIGEST: ${{ inputs.image_digest }}
+          SOURCE_SHA: ${{ inputs.source_sha }}
+        run: |
+          # ^와 $는 문자열 전체 일치를 뜻하고, [0-9a-f]{40}은
+          # 소문자 16진수 40자리(일반 Git commit SHA)만 허용합니다.
+          [[ "$SOURCE_SHA" =~ ^[0-9a-f]{40}$ ]] || {
+            echo "::error::source_sha must be a 40-character lowercase Git SHA."
+            exit 1
+          }
+
+          # sha- 접두사 뒤에 40자리 SHA를 요구해 mutable tag(latest 등)를 차단합니다.
+          [[ "$IMAGE_TAG" =~ ^sha-[0-9a-f]{40}$ ]] || {
+            echo "::error::image_tag must use the sha-<commit> format."
+            exit 1
+          }
+
+          # 형식만 맞는 다른 commit tag가 아니라, 전달된 source_sha와 정확히 같은지 확인합니다.
+          [[ "$IMAGE_TAG" == "sha-$SOURCE_SHA" ]] || {
+            echo "::error::image_tag must match source_sha."
+            exit 1
+          }
+
+          # OCI digest의 sha256: 접두사와 64자리 16진수 hash를 요구합니다.
+          [[ "$IMAGE_DIGEST" =~ ^sha256:[0-9a-f]{64}$ ]] || {
+            echo "::error::image_digest must be a SHA-256 OCI digest."
+            exit 1
+          }
+
+      # 대상 image 항목이 정확히 한 개일 때만 tag와 digest를 함께 교체합니다.
+      # manifest 구조가 달라져 매칭 수가 0 또는 2 이상이면 배포를 중단합니다.
+      - name: Update allowed image entry
+        env:
+          TARGET_FILE: ${{ steps.target.outputs.file }}
+          TARGET_IMAGE: ${{ steps.target.outputs.image }}
+          IMAGE_TAG: ${{ inputs.image_tag }}
+          IMAGE_DIGEST: ${{ inputs.image_digest }}
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import os
+          import re
+          import sys
+
+          # shell env로 받은 경로와 image 이름을 명시적으로 읽습니다.
+          target_file = Path(os.environ["TARGET_FILE"])
+
+          # ECR 주소의 점(.) 등 정규식 메타문자를 일반 문자로 처리합니다.
+          # image 주소가 정규식으로 해석되어 의도하지 않은 항목을 찾는 일을 막습니다.
+          target_image = re.escape(os.environ["TARGET_IMAGE"])
+          image_tag = os.environ["IMAGE_TAG"]
+          image_digest = os.environ["IMAGE_DIGEST"]
+
+          if not target_file.is_file():
+              sys.exit(f"GitOps target file does not exist: {target_file}")
+
+          original = target_file.read_text(encoding="utf-8")
+          # pattern의 구성:
+          # group 1: "- name: <허용 이미지>\n    newTag: "까지의 보존할 접두사
+          # \S+    : 기존 tag의 공백 없는 값 전체
+          # group 2: "\n    digest: "까지의 보존할 중간 구분자
+          # \S+    : 기존 digest의 공백 없는 값 전체
+          #
+          # 따라서 images 항목의 tag와 digest만 바꾸고 YAML의 나머지 구조는 유지합니다.
+          pattern = (
+              r"(- name: " + target_image + r"\n"
+              r"    newTag: )\S+(\n"
+              r"    digest: )\S+"
+          )
+
+          # 정규식으로 찾은 이미지 블록의 newTag와 digest 이외 내용은 보존합니다.
+          updated, count = re.subn(
+              pattern,
+              lambda match: (
+                  f"{match.group(1)}{image_tag}"
+                  f"{match.group(2)}{image_digest}"
+              ),
+              original,
+          )
+
+          # 0이면 대상 image가 없거나 YAML 구조가 달라진 것이고,
+          # 2 이상이면 같은 image 선언이 중복된 것이므로 어느 항목을 배포할지 모호합니다.
+          if count != 1:
+              sys.exit(
+                  "Expected exactly one matching image entry, "
+                  f"found: {count}"
+              )
+
+          target_file.write_text(updated, encoding="utf-8")
+          PY
+
+      # 공통 workflow의 버그나 의도하지 않은 변경이 다른 GitOps 파일에 반영되는 것을 차단합니다.
+      - name: Verify changed files
+        id: changes
+        env:
+          TARGET_FILE: ${{ steps.target.outputs.file }}
+        run: |
+          # 작업 트리의 변경 파일 이름만 조회합니다.
+          # checkout 직후에는 깨끗해야 하므로 이 목록에는 Python 치환 결과만 있어야 합니다.
+          changed_files="$(git diff --name-only)"
+
+          # 이미 같은 tag/digest가 적용된 재시도라면 새 커밋을 만들지 않습니다.
+          if [[ -z "$changed_files" ]]; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # 한 파일만 허용합니다. 둘 이상의 파일이면 줄바꿈이 포함되어 비교에 실패합니다.
+          if [[ "$changed_files" != "$TARGET_FILE" ]]; then
+            echo "::error::Unexpected file change detected."
+            printf '%s\n' "$changed_files"
+            exit 1
+          fi
+
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+
+      # 실제 내용이 달라진 경우에만 main에 커밋합니다.
+      - name: Commit and push image update
+        if: steps.changes.outputs.changed == 'true'
+        env:
+          SERVICE: ${{ inputs.service }}
+          IMAGE_TAG: ${{ inputs.image_tag }}
+          SOURCE_SHA: ${{ inputs.source_sha }}
+          TARGET_FILE: ${{ steps.target.outputs.file }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          # 검증된 대상 파일만 stage합니다. git add .을 쓰지 않아 다른 파일을 실수로 포함하지 않습니다.
+          git add -- "$TARGET_FILE"
+          git commit -m "chore(${SERVICE}): deploy ${IMAGE_TAG}"
+          # workflow가 확인한 GitOps main으로만 push합니다.
+          git push origin HEAD:main
+
+          # Actions 실행 화면에서 어떤 이미지와 원본 commit이 배포됐는지 확인할 수 있게 남깁니다.
+          {
+            echo "## GitOps image updated"
+            echo
+            echo "- Service: \`${SERVICE}\`"
+            echo "- Image tag: \`${IMAGE_TAG}\`"
+            echo "- Source commit: \`${SOURCE_SHA}\`"
+          } >> "$GITHUB_STEP_SUMMARY"
