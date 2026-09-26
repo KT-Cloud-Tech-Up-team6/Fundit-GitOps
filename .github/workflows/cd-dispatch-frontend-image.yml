@@ -1,0 +1,42 @@
+name: Dispatch Frontend image update
+
+# Fundit-FE CI가 ECR push 직후 호출하는 외부 진입 workflow입니다.
+# 이 파일은 Frontend 전용 입력을 받아 공통 workflow로 전달할 뿐,
+# image 이름이나 GitOps 파일 경로를 입력값으로 노출하지 않습니다.
+#
+# Fundit-FE CI가 호출하는 Frontend 전용 진입점입니다.
+# service 값은 외부 입력으로 받지 않고 frontend로 고정합니다.
+on:
+  workflow_dispatch:
+    inputs:
+      # FE CI가 방금 push한 이미지의 tag입니다. "가장 최근 이미지"를 조회하지 않고
+      # 이벤트를 발생시킨 정확한 build artifact를 배포하기 위해 전달받습니다.
+      image_tag:
+        description: Immutable Frontend image tag in sha-<commit> form
+        required: true
+        type: string
+      # tag와 함께 전달되는 immutable digest입니다. 실제 컨테이너 내용을 고정합니다.
+      image_digest:
+        description: Immutable Frontend OCI image digest
+        required: true
+        type: string
+      # 어떤 FE commit이 이 이미지를 만들었는지 추적·검증하기 위한 값입니다.
+      source_sha:
+        description: Fundit-FE source commit SHA
+        required: true
+        type: string
+
+# 재사용 workflow가 GitOps main의 허용된 파일을 갱신할 수 있는 최소 권한입니다.
+permissions:
+  contents: write
+
+jobs:
+  update-frontend-image:
+    # image 이름과 GitOps 경로는 공통 workflow의 frontend allow-list에서만 결정됩니다.
+    uses: ./.github/workflows/cd-update-image.yml
+    with:
+      # service는 고정값입니다. 호출자가 backend/ai 또는 임의 경로로 전환할 수 없습니다.
+      service: frontend
+      image_tag: ${{ inputs.image_tag }}
+      image_digest: ${{ inputs.image_digest }}
+      source_sha: ${{ inputs.source_sha }}
