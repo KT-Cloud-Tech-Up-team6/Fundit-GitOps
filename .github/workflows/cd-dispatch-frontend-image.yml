@@ -1,0 +1,53 @@
+name: Dispatch Frontend image update
+
+# Fundit-FE CI가 ECR push 직후 호출하는 외부 진입 workflow입니다.
+# 이 파일은 Frontend 전용 입력을 받아 공통 workflow로 전달할 뿐,
+# image 이름이나 GitOps 파일 경로를 입력값으로 노출하지 않습니다.
+#
+# Fundit-FE CI가 호출하는 Frontend 전용 진입점입니다.
+# service 값은 외부 입력으로 받지 않고 frontend로 고정합니다.
+on:
+  # 현재 개발 브랜치에서 workflow 자체를 검증하기 위한 임시 push 진입점입니다.
+  # workflow 파일 변경에만 반응하므로, image 갱신 commit이 다시 workflow를 실행하지 않습니다.
+  push:
+    branches:
+      - dev/gitops-image-dispatch
+    paths:
+      - .github/workflows/cd-update-image.yml
+      - .github/workflows/cd-dispatch-frontend-image.yml
+  workflow_dispatch:
+    inputs:
+      # FE CI가 방금 push한 이미지의 tag입니다. "가장 최근 이미지"를 조회하지 않고
+      # 이벤트를 발생시킨 정확한 build artifact를 배포하기 위해 전달받습니다.
+      image_tag:
+        description: Immutable Frontend image tag in sha-<commit> form
+        required: true
+        type: string
+      # tag와 함께 전달되는 immutable digest입니다. 실제 컨테이너 내용을 고정합니다.
+      image_digest:
+        description: Immutable Frontend OCI image digest
+        required: true
+        type: string
+      # 어떤 FE commit이 이 이미지를 만들었는지 추적·검증하기 위한 값입니다.
+      source_sha:
+        description: Fundit-FE source commit SHA
+        required: true
+        type: string
+
+# 재사용 workflow가 실행 브랜치의 허용된 파일을 갱신할 수 있는 최소 권한입니다.
+permissions:
+  contents: write
+
+jobs:
+  update-frontend-image:
+    # image 이름과 GitOps 경로는 공통 workflow의 frontend allow-list에서만 결정됩니다.
+    uses: ./.github/workflows/cd-update-image.yml
+    with:
+      # service는 고정값입니다. 호출자가 backend/ai 또는 임의 경로로 전환할 수 없습니다.
+      service: frontend
+      # push 테스트는 현재 dev manifest에 이미 있는 실제 ECR 이미지로 검증합니다.
+      image_tag: ${{ github.event_name == 'push' && 'sha-267c6d3e5317abc4f30588a5b6da1a28dc5797b8' || inputs.image_tag }}
+      image_digest: ${{ github.event_name == 'push' && 'sha256:d647f8a3819ffe9f9f063d7b7f07dc6fbff529c3ffeb8f213ee0c507adf2696a' || inputs.image_digest }}
+      source_sha: ${{ github.event_name == 'push' && '267c6d3e5317abc4f30588a5b6da1a28dc5797b8' || inputs.source_sha }}
+      # common workflow는 실행한 브랜치 이외, 특히 main으로 push하지 않습니다.
+      target_ref: ${{ github.ref_name }}
