@@ -46,8 +46,8 @@ jobs:
       # service는 고정값입니다. 호출자가 backend/ai 또는 임의 경로로 전환할 수 없습니다.
       service: frontend
       # push 테스트는 현재 dev manifest에 이미 있는 실제 ECR 이미지로 검증합니다.
-      image_tag: ${{ github.event_name == 'push' && 'sha-267c6d3e5317abc4f30588a5b6da1a28dc5797b8' || inputs.image_tag }}
-      image_digest: ${{ github.event_name == 'push' && 'sha256:d647f8a3819ffe9f9f063d7b7f07dc6fbff529c3ffeb8f213ee0c507adf2696a' || inputs.image_digest }}
-      source_sha: ${{ github.event_name == 'push' && '267c6d3e5317abc4f30588a5b6da1a28dc5797b8' || inputs.source_sha }}
+      image_tag: ${{ github.event_name == 'push' && 'sha-99a5447eff8694ee34cf613405e1269872e43237' || inputs.image_tag }}
+      image_digest: ${{ github.event_name == 'push' && 'sha256:6811231052b929ddb368a5d0cf32be1c24c97f8cd4babc3e7fad203655d5f1fe' || inputs.image_digest }}
+      source_sha: ${{ github.event_name == 'push' && '99a5447eff8694ee34cf613405e1269872e43237' || inputs.source_sha }}
       # common workflow는 실행한 브랜치 이외, 특히 main으로 push하지 않습니다.
       target_ref: ${{ github.ref_name }}
