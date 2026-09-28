@@ -1,0 +1,46 @@
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: fundit-auth-secret
+  namespace: dev
+spec:
+  refreshInterval: 1h
+  secretStoreRef:
+    name: aws-secrets-manager
+    kind: SecretStore
+  target:
+    name: fundit-auth-secret
+    creationPolicy: Orphan
+  data:
+    - secretKey: auth-encryption-key
+      remoteRef: {key: fundit/dev/auth, property: auth-encryption-key}
+    - secretKey: jwt-private-key
+      remoteRef: {key: fundit/dev/auth, property: jwt-private-key}
+    - secretKey: google-client-secret
+      remoteRef: {key: fundit/dev/auth, property: google-client-secret}
+    - secretKey: kakao-client-secret
+      remoteRef: {key: fundit/dev/auth, property: kakao-client-secret}
+    - secretKey: pg-api-key
+      remoteRef: {key: fundit/dev/auth, property: pg-api-key}
+    - secretKey: test-account-password
+      remoteRef: {key: fundit/dev/auth, property: test-account-password}
+    - secretKey: google-client-id
+      remoteRef: {key: /fundit/dev/auth/google-client-id}
+      sourceRef:
+        storeRef: {name: aws-parameter-store, kind: SecretStore}
+    - secretKey: google-redirect-uri
+      remoteRef: {key: /fundit/dev/auth/google-redirect-uri}
+      sourceRef:
+        storeRef: {name: aws-parameter-store, kind: SecretStore}
+    - secretKey: kakao-client-id
+      remoteRef: {key: /fundit/dev/auth/kakao-client-id}
+      sourceRef:
+        storeRef: {name: aws-parameter-store, kind: SecretStore}
+    - secretKey: kakao-redirect-uri
+      remoteRef: {key: /fundit/dev/auth/kakao-redirect-uri}
+      sourceRef:
+        storeRef: {name: aws-parameter-store, kind: SecretStore}
+    - secretKey: pg-store-id
+      remoteRef: {key: /fundit/dev/auth/pg-store-id}
+      sourceRef:
+        storeRef: {name: aws-parameter-store, kind: SecretStore}

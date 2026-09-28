@@ -3,6 +3,7 @@ kind: Kustomization
 
 resources:
   - ai-copilot
+  - ai-cuesheet
   - auth
   - fulfillment
   - live
