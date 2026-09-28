@@ -10,6 +10,7 @@ data:
   KAFKA_BOOTSTRAP_SERVERS: kafka.kafka.svc.cluster.local:9092
   LIVE_IVS_MODE: stub
   PROJECT_SERVICE_BASE_URL: http://fundit-project-svc:8080
+  MEMBER_SERVICE_BASE_URL: http://fundit-member-svc:8080
   SPRING_FLYWAY_DEFAULT_SCHEMA: live
   SPRING_FLYWAY_SCHEMAS: live
   SPRING_FLYWAY_CREATE_SCHEMAS: "true"
