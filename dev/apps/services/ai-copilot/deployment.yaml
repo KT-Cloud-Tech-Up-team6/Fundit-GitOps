@@ -36,8 +36,8 @@ spec:
           command: ["/bin/sh", "-ec"]
           args:
             - |
-              if [ -z "${GEMINI_API_KEY:-}" ] || [ -z "${API_TOKEN:-}" ]; then
-                echo "required AI credentials are empty" >&2
+              if ! printenv API_TOKEN | grep -q . || ! test -s /var/secrets/google/service-account.json; then
+                echo required-Copilot-API-token-or-Google-ADC-credential-is-missing >&2
                 exit 1
               fi
               exec uvicorn api.main:app --host 0.0.0.0 --port 8080
@@ -49,11 +49,6 @@ spec:
             - configMapRef:
                 name: fundit-ai-copilot-config
           env:
-            - name: GEMINI_API_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: fundit-ai-copilot-secret
-                  key: gemini-api-key
             - name: API_TOKEN
               valueFrom:
                 secretKeyRef:
@@ -62,6 +57,9 @@ spec:
           volumeMounts:
             - name: data
               mountPath: /data
+            - name: google-service-account
+              mountPath: /var/secrets/google
+              readOnly: true
             - name: tmp
               mountPath: /tmp
           securityContext:
@@ -101,6 +99,12 @@ spec:
         - name: data
           persistentVolumeClaim:
             claimName: fundit-ai-copilot-data
+        - name: google-service-account
+          secret:
+            secretName: fundit-ai-copilot-gcp-sa
+            items:
+              - key: service-account.json
+                path: service-account.json
         - name: tmp
           emptyDir:
             sizeLimit: 128Mi
