@@ -9,6 +9,8 @@ metadata:
 data:
   KAFKA_BOOTSTRAP_SERVERS: kafka.kafka.svc.cluster.local:9092
   PROJECT_SERVICE_BASE_URL: http://fundit-project-svc:8080
+  PAYMENT_SERVICE_BASE_URL: http://fundit-payment-svc:8080
+  LIVE_SERVICE_BASE_URL: http://fundit-live-svc:8080
   FULFILLMENT_SERVICE_BASE_URL: http://fundit-fulfillment-svc:8080
   ORDER_BACKFILL_FUNDING_PROJECT_PUBLIC_ID: "false"
   SPRING_FLYWAY_DEFAULT_SCHEMA: order_service
