@@ -5,6 +5,7 @@ resources:
   - configmap.yaml
   - deployment.yaml
   - service.yaml
+  - serviceaccount.yaml
 
 images:
   - name: 899957568205.dkr.ecr.ap-northeast-2.amazonaws.com/fundit-backend

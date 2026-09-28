@@ -13,10 +13,9 @@ Secret의 실제 값은 Git과 이 문서에 기록하지 않습니다.
 
 ## IVS 및 Kafka
 
-현재 dev 배포는 `LIVE_IVS_MODE=stub`을 사용하므로 AWS IVS 자격증명이 필요하지 않습니다.
-실제 IVS 연동은 AWS 담당자와 IAM 권한 및 선택 설정을 별도로 확정한 뒤 진행합니다.
-
-현재 이미지의 Live 서비스는 Kafka 이벤트를 발행만 하며 구독 토픽과 Redis 설정을 요구하지 않습니다.
+- Live 서비스의 AWS IVS 및 IVS Chat API 호출을 위해 IRSA 전용 ServiceAccount(`fundit-live-sa`, Role: `FunditLiveIvsRole-fundit-dev-eks`)가 연결되어 있습니다.
+- 환경설정에 따라 `LIVE_IVS_MODE`를 실제 AWS IVS 연동 모드로 전환할 수 있습니다.
+- 현재 이미지의 Live 서비스는 Kafka 이벤트를 발행만 하며 구독 토픽과 Redis 설정을 요구하지 않습니다.
 
 ## Gateway 경로
 

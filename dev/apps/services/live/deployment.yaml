@@ -23,6 +23,7 @@ spec:
         app.kubernetes.io/name: fundit-live
         app.kubernetes.io/part-of: fundit
     spec:
+      serviceAccountName: fundit-live-sa
       automountServiceAccountToken: false
       securityContext:
         runAsNonRoot: true
