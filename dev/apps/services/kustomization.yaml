@@ -3,6 +3,7 @@ kind: Kustomization
 
 resources:
   - ai-cuesheet
+  - ai-funding-story
   - auth
   - fulfillment
   - live
