@@ -32,7 +32,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: notification
-          image: 899957568205.dkr.ecr.ap-northeast-2.amazonaws.com/fundit-backend:sha-notification-service-11c61dedb7fe6248d41ab1f00979b80577590301@sha256:b6fcc630975ae9be71758808a60d213f4c853de94ab21ea027b566720b17810f
+          image: 899957568205.dkr.ecr.ap-northeast-2.amazonaws.com/fundit-backend
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
