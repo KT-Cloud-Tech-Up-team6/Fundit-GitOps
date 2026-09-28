@@ -7,6 +7,8 @@ metadata:
     app.kubernetes.io/name: fundit-project
     app.kubernetes.io/part-of: fundit
 data:
+  SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE: "5"
+  SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE: "1"
   KAFKA_BOOTSTRAP_SERVERS: kafka.kafka.svc.cluster.local:9092
   MEDIA_S3_BUCKET: fundit-media-dev-team6
   AWS_REGION: ap-northeast-2
