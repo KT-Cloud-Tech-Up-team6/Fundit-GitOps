@@ -5,6 +5,7 @@ resources:
   - apps
   - cnpg/cluster.yaml
   - cnpg/scheduled-backup.yaml
+  - external-secrets
   - karpenter/ec2nodeclass.yaml
   - karpenter/nodepool.yaml
   - monitoring/alerts.yaml
