@@ -8,6 +8,7 @@ metadata:
     app.kubernetes.io/part-of: fundit
 data:
   KAFKA_BOOTSTRAP_SERVERS: kafka.kafka.svc.cluster.local:9092
+  LIVE_SERVICE_BASE_URL: http://fundit-live-svc:8080
   SPRING_FLYWAY_DEFAULT_SCHEMA: search
   SPRING_FLYWAY_SCHEMAS: search
   SPRING_FLYWAY_CREATE_SCHEMAS: "true"
