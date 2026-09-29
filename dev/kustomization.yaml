@@ -11,3 +11,23 @@ resources:
   - monitoring/alerts.yaml
   - storage/storageclass-gp3.yaml
   - storage/storageclass-gp3-retain.yaml
+
+
+patches:
+  # Frontend를 제외한 Fundit Deployment 12개
+  - target:
+      kind: Deployment
+      labelSelector: app.kubernetes.io/part-of=fundit
+    patch: |-
+      - op: replace
+        path: /spec/replicas
+        value: 0
+
+  # 라벨이 다른 Frontend
+  - target:
+      kind: Deployment
+      name: fundit-frontend
+    patch: |-
+      - op: replace
+        path: /spec/replicas
+        value: 0
