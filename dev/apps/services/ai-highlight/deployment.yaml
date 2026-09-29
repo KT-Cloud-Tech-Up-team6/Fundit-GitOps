@@ -1,0 +1,103 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fundit-ai-highlight
+  namespace: dev
+  labels:
+    app.kubernetes.io/name: fundit-ai-highlight
+    app.kubernetes.io/part-of: fundit
+spec:
+  replicas: 1
+  revisionHistoryLimit: 2
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: fundit-ai-highlight
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: fundit-ai-highlight
+        app.kubernetes.io/part-of: fundit
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        fsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: ai-highlight
+          image: 899957568205.dkr.ecr.ap-northeast-2.amazonaws.com/fundit-ai-highlight
+          imagePullPolicy: IfNotPresent
+          command: ["/bin/sh", "-ec"]
+          args:
+            - |
+              if [ -z "${GEMINI_API_KEY:-}" ]; then
+                echo "required Highlight credential is empty" >&2
+                exit 1
+              fi
+              exec python3.11 -m uvicorn api.main:app --host 0.0.0.0 --port 8000 --workers 1
+          ports:
+            - name: http
+              containerPort: 8000
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: fundit-ai-highlight-config
+          env:
+            - name: GEMINI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: fundit-ai-highlight-secret
+                  key: gemini-api-key
+          volumeMounts:
+            - name: data
+              mountPath: /data
+            - name: tmp
+              mountPath: /tmp
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 10001
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: true
+          startupProbe:
+            httpGet:
+              path: /api/v1/ai/health
+              port: http
+            periodSeconds: 5
+            timeoutSeconds: 8
+            failureThreshold: 30
+          readinessProbe:
+            exec:
+              command:
+                - python3.11
+                - -c
+                - 'import json,sys,urllib.request; data=json.load(urllib.request.urlopen("http://127.0.0.1:8000/api/v1/ai/health", timeout=7)); sys.exit(0 if data.get("ok") else 1)'
+            periodSeconds: 10
+            timeoutSeconds: 10
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /api/v1/ai/health
+              port: http
+            periodSeconds: 20
+            timeoutSeconds: 8
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: "1"
+              memory: 2Gi
+      volumes:
+        - name: data
+          emptyDir:
+            sizeLimit: 1Gi
+        - name: tmp
+          emptyDir:
+            sizeLimit: 128Mi
+      terminationGracePeriodSeconds: 30

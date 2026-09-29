@@ -5,6 +5,7 @@ resources:
   - ai-copilot
   - ai-cuesheet
   - ai-funding-story
+  - ai-highlight
   - auth
   - fulfillment
   - live
