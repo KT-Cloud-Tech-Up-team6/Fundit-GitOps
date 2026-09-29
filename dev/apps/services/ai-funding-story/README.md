@@ -2,6 +2,8 @@
 
 이 Kustomization은 ServiceAccount, 내부 ClusterIP Service, 비밀키 없는 Google WIF `external_account` 설정 ConfigMap만 선언합니다. API·worker Pod, DB, Secret, projected token, 외부 경로는 생성하지 않습니다. API Deployment가 아래 Service의 selector를 사용하기 전까지는 엔드포인트가 없습니다. Project 서비스의 AI 호출 설정도 아직 변경하지 않습니다.
 
+API·worker 매니페스트는 [`draft/`](draft/)에서 비활성 초안으로 관리합니다. 실제 배포 전 조건이 충족되기 전까지 상위 Kustomization에 연결하지 않습니다.
+
 ## EKS 신원과 내부 주소
 
 - EKS OIDC issuer: `https://oidc.eks.ap-northeast-2.amazonaws.com/id/F9803D0BA6D1AF7F02C6DCB6AC3CB308`

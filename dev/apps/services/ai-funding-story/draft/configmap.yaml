@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: funding-story-ai-runtime
+  namespace: dev
+  labels:
+    app.kubernetes.io/name: fundit-ai-funding-story
+    app.kubernetes.io/part-of: fundit
+data:
+  APP_ENV: dev
+  MODEL_PROFILE: runtime
+  PROJECT_SERVICE_BASE_URL: http://fundit-project-svc:8080
+  GOOGLE_CLOUD_PROJECT: project-c0d4f6ae-c737-445d-93b
+  GOOGLE_CLOUD_LOCATION: global
+  GOOGLE_APPLICATION_CREDENTIALS: /var/run/secrets/google-wif/credentials.json
+  OPENAI_IDENTITY_PROVIDER_ID: idp_65c3c65ddba506b5f620bfc7
+  OPENAI_SERVICE_ACCOUNT_ID: user-1aa935e64b36d873abba6933
+  OPENAI_WIF_AUDIENCE: https://api.openai.com/v1
+  OPENAI_WIF_TOKEN_FILE: /var/run/secrets/openai-wif/token
+  OPENAI_WIF_EXPECTED_SUBJECT: system:serviceaccount:dev:funding-story-ai
