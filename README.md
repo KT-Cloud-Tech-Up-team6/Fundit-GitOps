@@ -23,35 +23,43 @@ GitHub Actions가 EKS에 직접 배포하지 않습니다. `main`에 반영된 �
 
 ```text
 Fundit-GitOps/
-├── root.yaml                    # App of Apps 진입점
+├── root.yaml                    # App of Apps 진입점 (apps/ 재귀 탐색)
 ├── apps/
-│   ├── dev.yaml                 # dev/** 재귀 동기화
+│   ├── dev.yaml                 # dev/ Kustomize 진입점
 │   ├── prod.yaml                # prod/** 재귀 동기화
 │   └── projects/                # 환경별 Argo CD AppProject
 ├── dev/
+│   ├── kustomization.yaml       # dev 리소스 등록의 최상위 목록
+│   ├── apps/                    # Frontend·Gateway·Ingress·Backend·AI 서비스
 │   ├── cnpg/                    # PostgreSQL Cluster·백업 정책
+│   ├── external-secrets/        # SecretStore·ExternalSecret
 │   ├── karpenter/               # NodePool·EC2NodeClass
 │   ├── monitoring/              # PrometheusRule 등 관제 정책
 │   ├── storage/                 # StorageClass
-│   ├── hpa/                     # 애플리케이션 HPA
-│   └── keda/                    # 이벤트 기반 스케일 정책
+│   ├── hpa/                     # HPA 준비 영역 (현재 미등록)
+│   └── keda/                    # ScaledObject 준비 영역 (현재 미등록)
 ├── staging/                     # staging 정책 준비 영역
 └── prod/                        # prod 정책 준비 영역
 ```
 
-`apps/dev.yaml`은 `dev/` 아래 YAML을 재귀적으로 읽습니다. dev 리소스는 별도의 Application을
-추가하지 않고 담당 디렉터리에 배치합니다.
+`root.yaml`은 `apps/`를 재귀 탐색하지만, `apps/dev.yaml`은 `dev/`의
+`kustomization.yaml`을 Kustomize 진입점으로 사용합니다. 새 dev 리소스는 파일을 배치하는
+것만으로 배포되지 않습니다. 상위 `kustomization.yaml`의 `resources`에도 등록해야 합니다.
+`prod/`는 아직 디렉터리 재귀 탐색 방식이며 `staging/`에는 Application이 없습니다.
 
 ## Argo CD Bootstrap
 
-Argo CD 설치 직후에는 `root.yaml`을 한 번 적용해 App of Apps를 시작해야 합니다.
+Fundit-Infra의 `terraform-cd.yml`은 Argo CD 레이어를 적용할 때 컨트롤러 기동을 기다린 뒤
+`root.yaml`을 적용하고 `fundit-root` 동기화를 확인합니다. 자동화가 실행되지 않은 초기 설치나
+복구 시에만 클러스터 관리자가 컨텍스트를 확인한 뒤 수동 적용합니다.
 
 ```bash
+kubectl config current-context
 kubectl apply -f root.yaml
 ```
 
 이후 `fundit-root`가 `apps/**`를 관리하고, `fundit-dev`와 `fundit-prod`가 환경별 리소스를
-관리합니다. Bootstrap 자동화가 적용되기 전까지 이 최초 적용은 클러스터 관리자 작업입니다.
+관리합니다.
 
 ## 환경 상태
 
@@ -61,8 +69,9 @@ kubectl apply -f root.yaml
 | `staging` | 준비 영역 | `staging/` |
 | `prod` | Application 골격만 존재 | `prod/` |
 
-현재 dev에는 Karpenter, gp3 StorageClass, CNPG PostgreSQL, 모니터링 정책이 선언되어 있습니다.
-애플리케이션 Deployment·Service·Ingress·HPA·KEDA 정책은 각 기능 이슈와 PR로 추가합니다.
+현재 dev에는 Frontend·Gateway·Ingress, Backend MSA, AI Cuesheet, CNPG PostgreSQL,
+ExternalSecret, Karpenter, gp3 StorageClass 및 모니터링 정책이 등록되어 있습니다.
+HPA·KEDA 리소스는 아직 최상위 Kustomization에 등록되지 않았습니다.
 
 ## 매니페스트 작성 규칙
 
@@ -74,6 +83,8 @@ kubectl apply -f root.yaml
 - Secret 값, 토큰, 인증서 원문은 Git에 저장하지 않습니다.
 - 인터넷 트래픽은 ALB Ingress에서 Frontend와 Gateway로만 전달하고, 내부 MSA는 ClusterIP로 둡니다.
 - 클러스터 범위 리소스는 환경별 AppProject의 `clusterResourceWhitelist` 허용 여부를 확인합니다.
+- 새 서비스 디렉터리에는 `kustomization.yaml`을 두고, 상위 Kustomization의 `resources`에 연결합니다.
+- 서비스 이미지 tag와 digest는 해당 서비스의 `kustomization.yaml`에서 함께 관리합니다.
 
 권장 공통 label:
 
@@ -90,6 +101,7 @@ metadata:
 | --- | --- | --- |
 | Backend MSA | `fundit-backend` | `sha-<service-name>-<git-commit-sha>` |
 | Frontend | `fundit-frontend` | `sha-<git-commit-sha>` |
+| AI Cuesheet | `fundit-ai-cuesheet` | `sha-<git-commit-sha>` |
 
 태그는 소스 커밋 추적에 사용하고, Deployment에는 가능하면 `tag@sha256:digest` 형식으로
 digest까지 고정합니다. 롤백할 수 있도록 배포에 사용한 digest를 Git 이력에 남깁니다.
@@ -97,7 +109,7 @@ digest까지 고정합니다. 롤백할 수 있도록 배포에 사용한 digest
 ## 변경 및 검증
 
 1. 이슈를 만들고 작업 범위를 합의합니다.
-2. `type/#이슈번호-설명` 형식으로 브랜치를 만듭니다.
+2. 관련 이슈 번호와 작업 목적을 식별할 수 있는 브랜치를 만듭니다.
 3. 로컬에서 공백 오류와 Kubernetes API 검증을 수행합니다.
 4. PR에서 Argo CD 영향 범위, Secret 포함 여부와 파괴적 변경을 확인합니다.
 5. 병합 후 Argo CD Sync·Health와 실제 Pod·Service 상태를 확인합니다.
@@ -106,7 +118,8 @@ digest까지 고정합니다. 롤백할 수 있도록 배포에 사용한 digest
 
 ```bash
 git diff --check
-kubectl apply --dry-run=server -f dev/<component>/
+kubectl kustomize dev >/dev/null
+kubectl apply --dry-run=server -k dev
 ```
 
 `dry-run=server`는 대상 클러스터의 CRD와 Admission 정책을 사용하므로 클러스터 접근 권한이
