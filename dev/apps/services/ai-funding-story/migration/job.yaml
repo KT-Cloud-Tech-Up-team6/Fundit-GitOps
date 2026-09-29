@@ -1,0 +1,56 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: fundit-ai-funding-story-migration
+  namespace: dev
+  annotations:
+    # Flyway must succeed before API and workers in a later GitOps sync.
+    argocd.argoproj.io/hook: PreSync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+spec:
+  backoffLimit: 1
+  activeDeadlineSeconds: 600
+  template:
+    spec:
+      restartPolicy: Never
+      nodeSelector:
+        kubernetes.io/arch: amd64
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: flyway
+          # AI team migration image from source commit b93736a; reconfirm in ECR before activation.
+          image: 899957568205.dkr.ecr.ap-northeast-2.amazonaws.com/fundit-ai-funding-story@sha256:56674d9d6df2cf5e14ec2fc65042f2b7475aacfa1e4ff1ab91bdc513e314fef8
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: FLYWAY_URL
+              valueFrom:
+                secretKeyRef:
+                  name: funding-story-ai-migration-db
+                  key: url
+            - name: FLYWAY_USER
+              valueFrom:
+                secretKeyRef:
+                  name: funding-story-ai-migration-db
+                  key: username
+            - name: FLYWAY_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: funding-story-ai-migration-db
+                  key: password
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ALL]

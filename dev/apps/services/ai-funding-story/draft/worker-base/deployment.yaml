@@ -30,9 +30,15 @@ spec:
           type: RuntimeDefault
       containers:
         - name: worker
-          # Draft only: replace with a verified ECR tag@digest before activation.
-          image: 899957568205.dkr.ecr.ap-northeast-2.amazonaws.com/fundit-ai-funding-story:REPLACE_WITH_VERIFIED_TAG
+          image: 899957568205.dkr.ecr.ap-northeast-2.amazonaws.com/fundit-ai-funding-story:sha-b93736adee91062fa2ee90c88387b30a1c6f6bcb@sha256:f97e62765a0ea86861e74e85f82218911f117f59d9851369bc092a12a202bf14
           imagePullPolicy: IfNotPresent
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: "1"
+              memory: 2Gi
           command: ["/app/.venv/bin/python", "-m", "funding_story.worker"]
           args: ["--lane", "funding-story"]
           envFrom:
