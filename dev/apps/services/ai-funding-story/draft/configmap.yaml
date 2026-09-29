@@ -9,6 +9,10 @@ metadata:
 data:
   APP_ENV: dev
   MODEL_PROFILE: runtime
+  # Four processes (API + three workers): cap the dev connection budget at 12.
+  DB_POOL_MAX_SIZE: "2"
+  DB_CHECKPOINT_POOL_MAX_SIZE: "1"
+  DB_SSLMODE: require
   PROJECT_SERVICE_BASE_URL: http://fundit-project-svc:8080
   GOOGLE_CLOUD_PROJECT: project-c0d4f6ae-c737-445d-93b
   GOOGLE_CLOUD_LOCATION: global
