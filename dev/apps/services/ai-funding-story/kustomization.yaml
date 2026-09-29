@@ -4,3 +4,4 @@ kind: Kustomization
 resources:
   - serviceaccount.yaml
   - service.yaml
+  - google-wif-configmap.yaml
