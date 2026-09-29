@@ -145,7 +145,11 @@ spec:
             description: "{{ $labels.namespace }}/{{ $labels.pod }} ({{ $labels.container }}) 컨테이너가 메모리 한도 초과(OOMKilled)로 강제 종료되었습니다."
 
         - alert: CNPGClusterDegraded
-          expr: count(kube_pod_status_phase{pod=~"fundit-dev-postgres-.*", phase="Running"} == 1) < 1
+          expr: |
+            (
+              sum(kube_pod_status_phase{namespace="dev", pod=~"fundit-dev-postgres-.*", phase="Running"})
+              or vector(0)
+            ) < 1
           for: 1m
           labels:
             severity: critical
@@ -198,5 +202,5 @@ spec:
             severity: info
           annotations:
             summary: "EKS 노드 수 변동 감지 (Karpenter 스케일링)"
-            description: "최근 5분 내 클러스터 노드 수가 변동되었습니다 (현재 총 노드 수: {{ $value }}대)."
+            description: "최근 5분 내 클러스터 노드 수 변동이 감지되었습니다 (5분간 변동 횟수: {{ $value }}회)."
 
