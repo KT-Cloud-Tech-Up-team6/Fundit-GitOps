@@ -4,6 +4,7 @@ kind: Kustomization
 resources:
   - ai-copilot
   - ai-cuesheet
+  - ai-funding-story
   - auth
   - fulfillment
   - live
