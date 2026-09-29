@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: fundit-ai-funding-story-svc
+  namespace: dev
+  labels:
+    app.kubernetes.io/name: fundit-ai-funding-story
+    app.kubernetes.io/part-of: fundit
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: fundit-ai-funding-story
+  ports:
+    - name: http
+      port: 8000
+      targetPort: http
+      protocol: TCP
