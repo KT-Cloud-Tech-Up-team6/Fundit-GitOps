@@ -25,6 +25,8 @@ spec:
       automountServiceAccountToken: false
       securityContext:
         runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
         fsGroup: 2000
         seccompProfile:
           type: RuntimeDefault
