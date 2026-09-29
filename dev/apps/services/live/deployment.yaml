@@ -23,7 +23,9 @@ spec:
         app.kubernetes.io/name: fundit-live
         app.kubernetes.io/part-of: fundit
     spec:
-      automountServiceAccountToken: false
+      # IRSA는 projected ServiceAccount token을 STS Web Identity token으로 사용한다.
+      automountServiceAccountToken: true
+      serviceAccountName: fundit-live-sa
       securityContext:
         runAsNonRoot: true
         runAsUser: 10001
