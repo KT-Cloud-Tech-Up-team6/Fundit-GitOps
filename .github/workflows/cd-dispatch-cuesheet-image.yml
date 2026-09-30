@@ -27,9 +27,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - name: Validate source and image identity
+      # Cuesheet is private. Its ECR push Role trusts only that repository's
+      # main branch; verify the exact tag/digest in ECR without another token.
+      - name: Validate image identity
         env:
-          GH_TOKEN: ${{ secrets.CUESHEET_SOURCE_READ_TOKEN }}
           IMAGE_TAG: ${{ inputs.image_tag }}
           IMAGE_DIGEST: ${{ inputs.image_digest }}
           SOURCE_SHA: ${{ inputs.source_sha }}
@@ -38,9 +39,6 @@ jobs:
           [[ "$SOURCE_SHA" =~ ^[0-9a-f]{40}$ ]] || { echo '::error::Invalid source SHA'; exit 1; }
           [[ "$IMAGE_TAG" == "sha-$SOURCE_SHA" ]] || { echo '::error::Tag/source mismatch'; exit 1; }
           [[ "$IMAGE_DIGEST" =~ ^sha256:[0-9a-f]{64}$ ]] || { echo '::error::Invalid digest'; exit 1; }
-          [[ -n "$GH_TOKEN" ]] || { echo '::error::Missing CUESHEET_SOURCE_READ_TOKEN'; exit 1; }
-          latest_sha="$(gh api repos/KT-Cloud-Tech-Up-team6/Fundit-Ai-cuesheet/commits/main --jq .sha)"
-          [[ "$SOURCE_SHA" == "$latest_sha" ]] || { echo '::error::Cuesheet source branch advanced'; exit 1; }
 
       - name: Configure AWS credentials for ECR read
         uses: aws-actions/configure-aws-credentials@v4
@@ -97,8 +95,6 @@ jobs:
 
       - name: Verify and push allowed change
         env:
-          GH_TOKEN: ${{ secrets.CUESHEET_SOURCE_READ_TOKEN }}
-          SOURCE_SHA: ${{ inputs.source_sha }}
           IMAGE_TAG: ${{ inputs.image_tag }}
         run: |
           set -euo pipefail
@@ -107,8 +103,6 @@ jobs:
           [[ -n "$changed" ]] || exit 0
           [[ "$changed" == "$target" ]] || { echo '::error::Unexpected file change'; exit 1; }
           git diff --check
-          latest_sha="$(gh api repos/KT-Cloud-Tech-Up-team6/Fundit-Ai-cuesheet/commits/main --jq .sha)"
-          [[ "$SOURCE_SHA" == "$latest_sha" ]] || { echo '::error::Cuesheet source branch advanced'; exit 1; }
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add -- "$target"
