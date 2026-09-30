@@ -6,7 +6,7 @@ metadata:
   labels:
     app: fundit-frontend
 spec:
-  replicas: 1
+  # replicas는 hpa.yaml이 관리한다. 여기 두면 ArgoCD selfHeal이 HPA 값을 되돌린다.
   revisionHistoryLimit: 2
   strategy:
     type: RollingUpdate
@@ -21,6 +21,14 @@ spec:
       labels:
         app: fundit-frontend
     spec:
+      # 한 AZ 장애에도 파드가 남도록 2a·2c에 나눠 띄운다.
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: DoNotSchedule
+          labelSelector:
+            matchLabels:
+              app: fundit-frontend
       automountServiceAccountToken: false
       securityContext:
         runAsNonRoot: true
