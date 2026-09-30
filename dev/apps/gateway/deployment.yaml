@@ -29,6 +29,9 @@ spec:
           minDomains: 2
           topologyKey: topology.kubernetes.io/zone
           whenUnsatisfiable: DoNotSchedule
+          # 롤링 배포 중 이전 버전 파드를 세지 않도록 같은 ReplicaSet 파드끼리만 비교한다.
+          matchLabelKeys:
+            - pod-template-hash
           labelSelector:
             matchLabels:
               app.kubernetes.io/name: fundit-gateway
