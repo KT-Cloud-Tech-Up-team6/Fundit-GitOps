@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fundit-ai-highlight-config
+  namespace: dev
+  labels:
+    app.kubernetes.io/name: fundit-ai-highlight
+    app.kubernetes.io/part-of: fundit
+data:
+  SHORTS_WORKSPACE: /data/workspace
+  SHORTS_MAX_JOBS: "1"
+  HF_HOME: /data/hf-cache
+  LOG_FORMAT: json
+  LOG_LEVEL: INFO

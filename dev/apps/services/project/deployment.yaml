@@ -72,6 +72,11 @@ spec:
                   key: password
             - name: SPRING_DATASOURCE_URL
               value: jdbc:postgresql://$(DB_HOST):$(DB_PORT)/$(DB_NAME)?currentSchema=project
+            - name: FUNDING_STORY_AI_SERVICE_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: funding-story-ai-auth
+                  key: service-token
             - name: INTERNAL_API_KEY
               valueFrom:
                 secretKeyRef:

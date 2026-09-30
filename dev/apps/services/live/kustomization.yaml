@@ -4,9 +4,10 @@ kind: Kustomization
 resources:
   - configmap.yaml
   - deployment.yaml
+  - serviceaccount.yaml
   - service.yaml
 
 images:
   - name: 899957568205.dkr.ecr.ap-northeast-2.amazonaws.com/fundit-backend
-    newTag: sha-live-service-47bee6edbec5dbebcca2a2ba13599026fbd02b8b
-    digest: sha256:d5c7d2d21506115098c5c66324572feebadba022831f7f2f97465e051f92c0e7
+    newTag: sha-live-service-4d0e7020dcde7bd139cbf2bf0b3bff44acbd2eff
+    digest: sha256:eac7f4dd7a2d052f6b5f276e087a2fa0f978a72f5342ad1eaecfe9f81bf96159

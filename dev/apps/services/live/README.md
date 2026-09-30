@@ -16,6 +16,17 @@ Secret의 실제 값은 Git과 이 문서에 기록하지 않습니다.
 현재 dev 배포는 `LIVE_IVS_MODE=stub`을 사용하므로 AWS IVS 자격증명이 필요하지 않습니다.
 실제 IVS 연동은 AWS 담당자와 IAM 권한 및 선택 설정을 별도로 확정한 뒤 진행합니다.
 
+## Live AI
+
+현재 dev 배포는 `LIVE_AI_MODE=http`으로 Copilot Q&A AI와 Cuesheet AI를 함께 호출합니다.
+ConfigMap에는 각 내부 Service URL을 설정하고, Deployment는 아래 기존 Secret key를 참조합니다.
+
+- `fundit-ai-copilot-secret/api-token` → `LIVE_AI_TOKEN`
+- `fundit-ai-cuesheet-secret/cuesheet-ai-token` → `LIVE_CUESHEET_AI_TOKEN`
+
+두 AI는 서로 다른 서버·토큰을 사용합니다. 값은 Git, PR, 로그에 기록하지 않으며,
+IVS는 이 변경과 무관하게 `stub`으로 유지합니다.
+
 현재 이미지의 Live 서비스는 Kafka 이벤트를 발행만 하며 구독 토픽과 Redis 설정을 요구하지 않습니다.
 
 ## Gateway 경로

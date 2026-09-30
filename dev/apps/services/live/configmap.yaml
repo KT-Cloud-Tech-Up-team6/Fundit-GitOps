@@ -7,8 +7,18 @@ metadata:
     app.kubernetes.io/name: fundit-live
     app.kubernetes.io/part-of: fundit
 data:
+  SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE: "5"
+  SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE: "1"
   KAFKA_BOOTSTRAP_SERVERS: kafka.kafka.svc.cluster.local:9092
-  LIVE_IVS_MODE: stub
+  # Infra Terraform의 Live IVS IRSA Role이 적용된 뒤 실제 AWS IVS를 사용한다.
+  LIVE_IVS_MODE: aws
+  LIVE_IVS_REGION: ap-northeast-2
+  LIVE_IVS_ENVIRONMENT: dev
+  LIVE_AI_MODE: http
+  LIVE_AI_BASE_URL: http://fundit-ai-copilot-svc:8080/api/v1/ai
+  LIVE_CUESHEET_AI_BASE_URL: http://fundit-ai-cuesheet-svc:8420
+  PROJECT_SERVICE_BASE_URL: http://fundit-project-svc:8080
+  MEMBER_SERVICE_BASE_URL: http://fundit-member-svc:8080
   SPRING_FLYWAY_DEFAULT_SCHEMA: live
   SPRING_FLYWAY_SCHEMAS: live
   SPRING_FLYWAY_CREATE_SCHEMAS: "true"

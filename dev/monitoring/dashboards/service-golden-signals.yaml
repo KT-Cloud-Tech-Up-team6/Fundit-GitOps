@@ -1,0 +1,99 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fundit-dashboard-service-golden-signals
+  namespace: monitoring
+  labels:
+    grafana_dashboard: "1"
+data:
+  fundit-service-golden-signals.json: |
+    {
+      "editable": true,
+      "graphTooltip": 0,
+      "panels": [
+        {
+          "id": 1,
+          "title": "트래픽 - 결제 요청률 (상태별)",
+          "type": "timeseries",
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [
+            {
+              "expr": "sum(rate(payment_requests_total[5m])) by (status)",
+              "legendFormat": "{{status}}",
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "id": 2,
+          "title": "에러율 - 결제 실패율 (목표 0.5% 이하)",
+          "type": "timeseries",
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": { "defaults": { "unit": "percentunit" } },
+          "targets": [
+            {
+              "expr": "1 - (sum(rate(payment_requests_total{status=\"success\"}[5m])) / sum(rate(payment_requests_total[5m])))",
+              "legendFormat": "결제 실패율",
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "id": 3,
+          "title": "트래픽 - 캠페인 오픈 순간 동시 요청 (상태별)",
+          "type": "timeseries",
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [
+            {
+              "expr": "sum(rate(campaign_open_concurrent_requests[1m])) by (status)",
+              "legendFormat": "{{status}}",
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "id": 4,
+          "title": "정합성 - 오버셀 / 금액 불일치 발생 건수",
+          "type": "timeseries",
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [
+            {
+              "expr": "increase(campaign_oversell_count[5m])",
+              "legendFormat": "오버셀",
+              "refId": "A"
+            },
+            {
+              "expr": "increase(campaign_amount_mismatch_count[5m])",
+              "legendFormat": "금액 불일치",
+              "refId": "B"
+            }
+          ]
+        },
+        {
+          "id": 5,
+          "title": "포화도 - 서비스별 CPU 사용량 (payment/project/order)",
+          "type": "timeseries",
+          "gridPos": { "h": 8, "w": 24, "x": 0, "y": 16 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [
+            {
+              "expr": "sum(rate(container_cpu_usage_seconds_total{namespace=\"dev\", pod=~\"payment-service.*|project-service.*|order-service.*\"}[5m])) by (pod)",
+              "legendFormat": "{{pod}}",
+              "refId": "A"
+            }
+          ]
+        }
+      ],
+      "refresh": "30s",
+      "schemaVersion": 39,
+      "tags": ["fundit", "golden-signals"],
+      "time": { "from": "now-6h", "to": "now" },
+      "timezone": "Asia/Seoul",
+      "title": "Fundit - 서비스 4 Golden Signals (결제·캠페인·주문)",
+      "uid": "fundit-service-golden-signals",
+      "version": 1
+    }
