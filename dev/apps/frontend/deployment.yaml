@@ -21,7 +21,8 @@ spec:
       labels:
         app: fundit-frontend
     spec:
-      # 파드 2개로 운영해 spot 회수로 한 개가 옮겨져도 서비스가 유지된다.
+      # spot NodePool 사용을 허용한다. 두 파드가 모두 spot에 있고 두 노드가 동시에 회수되면
+      # 새 파드가 뜰 때까지(약 1~2분) 서비스가 중단될 수 있다. dev에서는 이 위험을 수용한다.
       tolerations:
         - key: fundit.io/spot
           operator: Equal
