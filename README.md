@@ -102,9 +102,31 @@ metadata:
 | Backend MSA | `fundit-backend` | `sha-<service-name>-<git-commit-sha>` |
 | Frontend | `fundit-frontend` | `sha-<git-commit-sha>` |
 | AI Cuesheet | `fundit-ai-cuesheet` | `sha-<git-commit-sha>` |
+| AI Copilot·Highlight | 서비스별 ECR Repository | `sha-<git-commit-sha>` |
 
 태그는 소스 커밋 추적에 사용하고, Deployment에는 가능하면 `tag@sha256:digest` 형식으로
 digest까지 고정합니다. 롤백할 수 있도록 배포에 사용한 digest를 Git 이력에 남깁니다.
+
+### 자동 이미지 갱신
+
+Frontend CI는 ECR push 후 `cd-dispatch-frontend-image.yml`을 호출합니다. Backend와
+Copilot·Highlight용 진입점은 각각 `cd-dispatch-backend-image.yml`,
+`cd-dispatch-copilot-image.yml`, `cd-dispatch-highlight-image.yml`입니다. 이 세
+진입점은 GitOps 쪽 허용 목록에서 ECR Repository와 수정 파일을 고정하며, tag/SHA,
+ECR tag→digest, 소스 브랜치 및 Backend 서비스별 전진 여부를 검증합니다. 이미지
+값 외의 파일 변경이 생기면 push하지 않습니다.
+
+BE·AI 자동 배포는 각 소스 저장소의 ECR push 성공 후 dispatch 단계와 Actions Secret
+`FUNDIT_GITOPS_TOKEN`, 그리고 GitOps의 `GITOPS_BE_AI_ECR_READ_ROLE_ARN`에 지정된
+ECR 읽기 Role이 준비된 뒤에만 동작합니다. 소스 CI에는 GitOps `Actions: write`만
+부여하고 `Contents: write`는 부여하지 않습니다. 외부 호출이 실패하면 GitOps
+Actions 실행 기록에서 입력 검증·ECR 검증·push 단계를 확인한 뒤, 원인 수정 후
+같은 tag/digest로 다시 호출합니다. 잘못된 이미지가 반영되면 마지막 정상 digest의
+Git commit으로 revert한 뒤 Argo CD Sync와 Pod imageID를 확인합니다.
+
+AI Cuesheet는 비공개 소스 브랜치 검증 권한이 정해지지 않아, Funding Story는
+Flyway migration 이미지의 선행 성공을 보장하는 전용 흐름이 필요해 이번
+단순 이미지 갱신 진입점에서 제외합니다.
 
 ## 변경 및 검증
 
