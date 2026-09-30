@@ -136,13 +136,16 @@ spec:
             description: "{{ $labels.namespace }}/{{ $labels.pod }} 컨테이너가 10분 내 3회 이상 재시작했습니다."
 
         - alert: PodOOMKilled
-          expr: kube_pod_container_status_last_terminated_reason{reason="OOMKilled"} == 1
+          expr: |
+            (kube_pod_container_status_last_terminated_reason{reason="OOMKilled"} == 1)
+              and on(namespace, pod, container)
+            (increase(kube_pod_container_status_restarts_total[5m]) > 0)
           for: 0m
           labels:
             severity: critical
           annotations:
             summary: "파드 OOMKilled 발생"
-            description: "{{ $labels.namespace }}/{{ $labels.pod }} ({{ $labels.container }}) 컨테이너가 메모리 한도 초과(OOMKilled)로 강제 종료되었습니다."
+            description: "{{ $labels.namespace }}/{{ $labels.pod }} ({{ $labels.container }}) 컨테이너가 최근 5분 내 메모리 한도 초과(OOMKilled)로 강제 종료 및 재시작되었습니다."
 
         - alert: CNPGClusterDegraded
           expr: |
