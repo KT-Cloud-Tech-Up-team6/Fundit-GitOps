@@ -36,9 +36,10 @@ on:
         description: Source repository commit SHA
         required: true
         type: string
-# GitOps 파일을 수정하는 권한은 외부 서비스 CI가 아닌 이 workflow에만 둡니다.
+# GITHUB_TOKEN은 보호 브랜치에 push하지 않습니다. AWS OIDC만 필요합니다.
 permissions:
-  contents: write
+  contents: read
+  id-token: write
 
 # 여러 서비스가 동시에 main을 갱신해도 push 충돌이나 변경 유실이 없도록 직렬화합니다.
 concurrency:
@@ -47,16 +48,11 @@ concurrency:
 
 jobs:
   update-image:
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 10
 
     steps:
-      # 호출 workflow의 ref가 아닌 배포 대상인 GitOps main을 기준으로 수정합니다.
-      - name: Checkout GitOps main
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-        with:
-          ref: main
-
       # 서비스 식별자와 허용된 ECR image / 수정 파일을 여기에서만 매핑합니다.
       # 이후 BE, AI 추가 시에도 새 서비스 항목을 명시적으로 allow-list에 넣습니다.
       - name: Resolve allowed image target
@@ -69,6 +65,7 @@ jobs:
               # 이 두 값은 입력값이 아니라 GitOps 코드에 고정된 allow-list입니다.
               # 따라서 FE 호출자가 다른 ECR image나 임의 파일 경로를 지정할 수 없습니다.
               echo "image=899957568205.dkr.ecr.ap-northeast-2.amazonaws.com/fundit-frontend" >> "$GITHUB_OUTPUT"
+              echo "repository=fundit-frontend" >> "$GITHUB_OUTPUT"
               echo "file=dev/apps/frontend/kustomization.yaml" >> "$GITHUB_OUTPUT"
               ;;
             *)
@@ -108,6 +105,57 @@ jobs:
             echo "::error::image_digest must be a SHA-256 OCI digest."
             exit 1
           }
+
+      # 늦게 끝난 옛 CI 실행이 새 FE 이미지로 배포된 dev를 되돌리지 않게 합니다.
+      - name: Reject stale Frontend commit
+        env:
+          SOURCE_SHA: ${{ inputs.source_sha }}
+        run: |
+          latest_sha="$(git ls-remote https://github.com/KT-Cloud-Tech-Up-team6/Fundit-FE.git refs/heads/main | cut -f1)"
+          if [[ -z "$latest_sha" || "$SOURCE_SHA" != "$latest_sha" ]]; then
+            echo "::error::source_sha is not the current Fundit-FE main commit."
+            exit 1
+          fi
+
+      # GitOps workflow 자체가 ECR의 tag가 가리키는 digest를 확인합니다.
+      - name: Configure AWS credentials for ECR read
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.GITOPS_ECR_READ_ROLE_ARN }}
+          aws-region: ap-northeast-2
+
+      - name: Verify ECR tag and digest
+        env:
+          ECR_REPOSITORY: ${{ steps.target.outputs.repository }}
+          IMAGE_TAG: ${{ inputs.image_tag }}
+          IMAGE_DIGEST: ${{ inputs.image_digest }}
+        run: |
+          actual_digest="$(aws ecr describe-images \
+            --repository-name "$ECR_REPOSITORY" \
+            --image-ids "imageTag=$IMAGE_TAG" \
+            --query 'imageDetails[0].imageDigest' \
+            --output text)"
+          if [[ "$actual_digest" != "$IMAGE_DIGEST" ]]; then
+            echo "::error::ECR tag does not point to the supplied digest."
+            exit 1
+          fi
+
+      # 입력·ECR 검증이 끝난 뒤에만 보호 브랜치 예외 토큰을 발급합니다.
+      # App 설치 및 예외 설정은 저장소 관리자가 별도로 수행해야 합니다.
+      - name: Create GitOps CD App token
+        id: app-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3
+        with:
+          client-id: ${{ vars.GITOPS_CD_APP_CLIENT_ID }}
+          private-key: ${{ secrets.GITOPS_CD_APP_PRIVATE_KEY }}
+          permission-contents: write
+
+      # 호출 workflow의 ref가 아닌 배포 대상인 GitOps main을 기준으로 수정합니다.
+      - name: Checkout GitOps main
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: main
+          token: ${{ steps.app-token.outputs.token }}
 
       # 대상 image 항목이 정확히 한 개일 때만 tag와 digest를 함께 교체합니다.
       # manifest 구조가 달라져 매칭 수가 0 또는 2 이상이면 배포를 중단합니다.
@@ -205,6 +253,13 @@ jobs:
           SOURCE_SHA: ${{ inputs.source_sha }}
           TARGET_FILE: ${{ steps.target.outputs.file }}
         run: |
+          # 검증 이후 FE main이 이동했다면 오래된 이미지를 반영하지 않습니다.
+          latest_sha="$(git ls-remote https://github.com/KT-Cloud-Tech-Up-team6/Fundit-FE.git refs/heads/main | cut -f1)"
+          if [[ -z "$latest_sha" || "$SOURCE_SHA" != "$latest_sha" ]]; then
+            echo "::error::Fundit-FE main advanced during this workflow."
+            exit 1
+          fi
+
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 

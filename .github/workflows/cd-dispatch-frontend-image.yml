@@ -26,12 +26,15 @@ on:
         required: true
         type: string
 
-# 재사용 workflow가 GitOps main의 허용된 파일을 갱신할 수 있는 최소 권한입니다.
+# GITHUB_TOKEN은 읽기·AWS OIDC만 사용하며, push는 GitOps 전용 App 토큰으로 합니다.
 permissions:
-  contents: write
+  contents: read
+  id-token: write
 
 jobs:
   update-frontend-image:
+    # workflow_dispatch API의 ref는 호출자가 선택할 수 있으므로 main 외 실행은 차단합니다.
+    if: github.ref == 'refs/heads/main'
     # image 이름과 GitOps 경로는 공통 workflow의 frontend allow-list에서만 결정됩니다.
     uses: ./.github/workflows/cd-update-image.yml
     with:
