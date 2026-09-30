@@ -9,6 +9,7 @@ resources:
   - external-secrets
   - karpenter/ec2nodeclass.yaml
   - karpenter/nodepool.yaml
+  - karpenter/nodepool-spot.yaml
   - monitoring/alerts.yaml
   - monitoring/alertmanagerconfig.yaml
   - monitoring/dashboards/hpa.yaml

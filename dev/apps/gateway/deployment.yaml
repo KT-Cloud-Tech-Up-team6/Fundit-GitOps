@@ -23,6 +23,12 @@ spec:
         app.kubernetes.io/name: fundit-gateway
         app.kubernetes.io/part-of: fundit
     spec:
+      # 파드 2개로 운영해 spot 회수로 한 개가 옮겨져도 서비스가 유지된다.
+      tolerations:
+        - key: fundit.io/spot
+          operator: Equal
+          value: "true"
+          effect: NoSchedule
       # 한 AZ 장애에도 파드가 남도록 2a·2c에 나눠 띄운다.
       topologySpreadConstraints:
         - maxSkew: 1

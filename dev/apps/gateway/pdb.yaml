@@ -1,0 +1,11 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: fundit-gateway
+  namespace: dev
+spec:
+  # 노드 정리가 NodePool마다 따로 일어나도 파드 1개는 남긴다.
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: fundit-gateway
