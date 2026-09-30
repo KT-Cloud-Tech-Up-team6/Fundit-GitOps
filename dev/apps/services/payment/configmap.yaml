@@ -12,6 +12,7 @@ data:
   KAFKA_BOOTSTRAP_SERVERS: kafka.kafka.svc.cluster.local:9092
   ORDER_SERVICE_BASE_URL: http://fundit-order-svc:8080
   FULFILLMENT_SERVICE_BASE_URL: http://fundit-fulfillment-svc:8080
+  MEDIA_PUBLIC_BASE_URL: https://infrastudy.store/media/
   ORDER_FUNDING_CLIENT_MODE: http
   SHIPPING_STATUS_CLIENT_MODE: http
   MEDIA_S3_BUCKET: fundit-media-dev-team6
