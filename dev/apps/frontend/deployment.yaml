@@ -24,6 +24,7 @@ spec:
       # 한 AZ 장애에도 파드가 남도록 2a·2c에 나눠 띄운다.
       topologySpreadConstraints:
         - maxSkew: 1
+          minDomains: 2
           topologyKey: topology.kubernetes.io/zone
           whenUnsatisfiable: DoNotSchedule
           labelSelector:
