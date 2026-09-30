@@ -1,0 +1,156 @@
+name: Dispatch Funding Story runtime and migration images
+
+on:
+  workflow_dispatch:
+    inputs:
+      runtime_tag:
+        required: true
+        type: string
+      runtime_digest:
+        required: true
+        type: string
+      migration_tag:
+        required: true
+        type: string
+      migration_digest:
+        required: true
+        type: string
+      source_sha:
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: gitops-image-update-main
+  cancel-in-progress: false
+
+jobs:
+  update-funding-story-images:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Validate source and image identities
+        env:
+          RUNTIME_TAG: ${{ inputs.runtime_tag }}
+          RUNTIME_DIGEST: ${{ inputs.runtime_digest }}
+          MIGRATION_TAG: ${{ inputs.migration_tag }}
+          MIGRATION_DIGEST: ${{ inputs.migration_digest }}
+          SOURCE_SHA: ${{ inputs.source_sha }}
+        run: |
+          set -euo pipefail
+          [[ "$SOURCE_SHA" =~ ^[0-9a-f]{40}$ ]] || { echo '::error::Invalid source SHA'; exit 1; }
+          [[ "$RUNTIME_TAG" == "sha-$SOURCE_SHA" ]] || { echo '::error::Runtime tag/source mismatch'; exit 1; }
+          [[ "$MIGRATION_TAG" == "sha-$SOURCE_SHA-migration" ]] || { echo '::error::Migration tag/source mismatch'; exit 1; }
+          for digest in "$RUNTIME_DIGEST" "$MIGRATION_DIGEST"; do
+            [[ "$digest" =~ ^sha256:[0-9a-f]{64}$ ]] || { echo '::error::Invalid digest'; exit 1; }
+          done
+          latest_sha="$(git ls-remote https://github.com/KT-Cloud-Tech-Up-team6/Fundit-AI-Funding-Story.git refs/heads/main | cut -f1)"
+          [[ -n "$latest_sha" && "$SOURCE_SHA" == "$latest_sha" ]] || {
+            echo '::error::Funding Story source branch advanced'; exit 1;
+          }
+
+      - name: Configure AWS credentials for ECR read
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.GITOPS_BE_AI_ECR_READ_ROLE_ARN }}
+          aws-region: ap-northeast-2
+
+      - name: Verify both ECR tags and digests
+        env:
+          RUNTIME_TAG: ${{ inputs.runtime_tag }}
+          RUNTIME_DIGEST: ${{ inputs.runtime_digest }}
+          MIGRATION_TAG: ${{ inputs.migration_tag }}
+          MIGRATION_DIGEST: ${{ inputs.migration_digest }}
+        run: |
+          set -euo pipefail
+          for kind in RUNTIME MIGRATION; do
+            tag_var="${kind}_TAG"
+            digest_var="${kind}_DIGEST"
+            tag="${!tag_var}"
+            digest="${!digest_var}"
+            actual="$(aws ecr describe-images --repository-name fundit-ai-funding-story \
+              --image-ids "imageTag=$tag" --query 'imageDetails[0].imageDigest' --output text)"
+            [[ "$actual" == "$digest" ]] || { echo "::error::$kind ECR tag/digest mismatch"; exit 1; }
+          done
+
+      - name: Create GitOps CD App token
+        id: app-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3
+        with:
+          client-id: ${{ vars.GITOPS_CD_APP_CLIENT_ID }}
+          private-key: ${{ secrets.GITOPS_CD_APP_PRIVATE_KEY }}
+          permission-contents: write
+
+      - name: Checkout GitOps main
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: main
+          token: ${{ steps.app-token.outputs.token }}
+
+      - name: Update migration, API, and worker image references
+        env:
+          RUNTIME_TAG: ${{ inputs.runtime_tag }}
+          RUNTIME_DIGEST: ${{ inputs.runtime_digest }}
+          MIGRATION_DIGEST: ${{ inputs.migration_digest }}
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import os
+          import re
+          import sys
+
+          root = Path('dev/apps/services/ai-funding-story')
+          image = '899957568205.dkr.ecr.ap-northeast-2.amazonaws.com/fundit-ai-funding-story'
+          runtime = f"{image}:{os.environ['RUNTIME_TAG']}@{os.environ['RUNTIME_DIGEST']}"
+          migration = f"{image}@{os.environ['MIGRATION_DIGEST']}"
+          targets = {
+              root / 'migration/job.yaml': (
+                  r'^(\s*image: )' + re.escape(image) + r'(?:\S*)@sha256:[0-9a-f]{64}$',
+                  migration,
+              ),
+              root / 'draft/api.yaml': (
+                  r'^(\s*image: )' + re.escape(image) + r':sha-[0-9a-f]{40}@sha256:[0-9a-f]{64}$',
+                  runtime,
+              ),
+              root / 'draft/worker-base/deployment.yaml': (
+                  r'^(\s*image: )' + re.escape(image) + r':sha-[0-9a-f]{40}@sha256:[0-9a-f]{64}$',
+                  runtime,
+              ),
+          }
+          for path, (pattern, replacement) in targets.items():
+              original = path.read_text(encoding='utf-8')
+              updated, count = re.subn(pattern, lambda m: m.group(1) + replacement,
+                                       original, flags=re.MULTILINE)
+              if count != 1:
+                  sys.exit(f'Expected one image reference in {path}, found {count}')
+              path.write_text(updated, encoding='utf-8')
+          PY
+
+      - name: Verify and push only Funding Story image files
+        env:
+          SOURCE_SHA: ${{ inputs.source_sha }}
+          RUNTIME_TAG: ${{ inputs.runtime_tag }}
+        run: |
+          set -euo pipefail
+          allowed='^(dev/apps/services/ai-funding-story/migration/job.yaml|dev/apps/services/ai-funding-story/draft/api.yaml|dev/apps/services/ai-funding-story/draft/worker-base/deployment.yaml)$'
+          changed="$(git diff --name-only)"
+          [[ -n "$changed" ]] || exit 0
+          while IFS= read -r file; do
+            [[ "$file" =~ $allowed ]] || { echo '::error::Unexpected file change'; exit 1; }
+          done <<< "$changed"
+          git diff --check
+          latest_sha="$(git ls-remote https://github.com/KT-Cloud-Tech-Up-team6/Fundit-AI-Funding-Story.git refs/heads/main | cut -f1)"
+          [[ -n "$latest_sha" && "$SOURCE_SHA" == "$latest_sha" ]] || {
+            echo '::error::Funding Story source branch advanced'; exit 1;
+          }
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- dev/apps/services/ai-funding-story/migration/job.yaml \
+            dev/apps/services/ai-funding-story/draft/api.yaml \
+            dev/apps/services/ai-funding-story/draft/worker-base/deployment.yaml
+          git commit -m "chore(ai-funding-story): deploy $RUNTIME_TAG with migration"
+          git push origin HEAD:main
