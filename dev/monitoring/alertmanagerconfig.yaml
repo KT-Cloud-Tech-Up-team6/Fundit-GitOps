@@ -7,47 +7,97 @@ metadata:
     alertmanagerConfig: fundit
 spec:
   route:
-    receiver: 'slack-warning'     
+    receiver: 'slack-warning'
     groupBy: ['alertname']
     groupWait: 30s
     groupInterval: 5m
     repeatInterval: 4h
-    muteTimeIntervals:
-      - sleep-schedule            
 
+    # 전역 설정의 최상위 route에는 muteTimeIntervals를 둘 수 없어 하위 route마다 지정한다.
     routes:
+      # Watchdog·InfoInhibitor(severity none)는 알림 경로 점검용이라 Slack으로 보내지 않는다.
+      - matchers:
+          - name: severity
+            value: none
+        receiver: 'null'
+
       - matchers:
           - name: severity
             value: critical
         receiver: 'slack-critical'
-        repeatInterval: 1h          
+        repeatInterval: 1h
 
       - matchers:
           - name: severity
             value: warning
         receiver: 'slack-warning'
+        muteTimeIntervals:
+          - sleep-schedule
 
       - matchers:
           - name: severity
             value: info
         receiver: 'slack-info'
         repeatInterval: 24h
+        muteTimeIntervals:
+          - sleep-schedule
 
-  
+  # 전역 설정은 차트 기본 inhibit_rules를 쓰지 않아 같은 규칙을 여기에 둔다.
+  inhibitRules:
+    - sourceMatch:
+        - name: severity
+          value: critical
+          matchType: '='
+      targetMatch:
+        - name: severity
+          value: warning|info
+          matchType: '=~'
+      equal: ['namespace', 'alertname']
+    - sourceMatch:
+        - name: severity
+          value: warning
+          matchType: '='
+      targetMatch:
+        - name: severity
+          value: info
+          matchType: '='
+      equal: ['namespace', 'alertname']
+    - sourceMatch:
+        - name: alertname
+          value: InfoInhibitor
+          matchType: '='
+      targetMatch:
+        - name: severity
+          value: info
+          matchType: '='
+      equal: ['namespace']
+    - targetMatch:
+        - name: alertname
+          value: InfoInhibitor
+          matchType: '='
+
+  # Alertmanager는 UTC로 해석하고 v1alpha1에는 location 필드가 없어 KST를 UTC로 바꿔 적는다.
+  # KST 평일 21:00~08:30, 금 21:00~월 08:30
   muteTimeIntervals:
     - name: sleep-schedule
       timeIntervals:
-        - weekdays: ['saturday', 'sunday']
-        - weekdays: ['monday:friday']
+        - weekdays: ['monday:thursday']
           times:
-            - startTime: '21:00'
+            - startTime: '12:00'
+              endTime: '23:30'
+        - weekdays: ['friday']
+          times:
+            - startTime: '12:00'
               endTime: '24:00'
-        - weekdays: ['monday:friday']
+        - weekdays: ['saturday']
+        - weekdays: ['sunday']
           times:
             - startTime: '00:00'
-              endTime: '08:30'
+              endTime: '23:30'
 
   receivers:
+    - name: 'null'
+
     - name: 'slack-critical'
       slackConfigs:
         - apiURL:

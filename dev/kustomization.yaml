@@ -9,5 +9,11 @@ resources:
   - karpenter/ec2nodeclass.yaml
   - karpenter/nodepool.yaml
   - monitoring/alerts.yaml
+  - monitoring/alertmanagerconfig.yaml
+  - monitoring/dashboards/hpa.yaml
+  - monitoring/dashboards/infra-overview.yaml
+  - monitoring/dashboards/ingress.yaml
+  - monitoring/dashboards/service-golden-signals.yaml
+  - monitoring/dashboards/streaming-burst.yaml
   - storage/storageclass-gp3.yaml
   - storage/storageclass-gp3-retain.yaml
