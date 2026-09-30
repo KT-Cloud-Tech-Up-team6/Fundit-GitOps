@@ -16,6 +16,7 @@ data:
   ORDER_SERVICE_BASE_URL: http://fundit-order-svc:8080
   FUNDING_STORY_AI_BASE_URL: http://fundit-ai-funding-story-svc:8000
   MEMBER_SERVICE_BASE_URL: http://fundit-member-svc:8080
+  MEDIA_PUBLIC_BASE_URL: https://infrastudy.store/media/
   SPRING_FLYWAY_DEFAULT_SCHEMA: project
   SPRING_FLYWAY_SCHEMAS: project
   SPRING_FLYWAY_CREATE_SCHEMAS: "true"
