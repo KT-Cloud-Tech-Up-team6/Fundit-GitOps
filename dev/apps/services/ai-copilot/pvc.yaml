@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: fundit-ai-copilot-data
+  namespace: dev
+  labels:
+    app.kubernetes.io/name: fundit-ai-copilot
+    app.kubernetes.io/part-of: fundit
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: gp3-retain
+  resources:
+    requests:
+      storage: 1Gi

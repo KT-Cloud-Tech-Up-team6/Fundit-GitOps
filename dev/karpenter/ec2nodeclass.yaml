@@ -11,6 +11,11 @@ spec:
   # 재현 가능한 롤아웃이 필요해지면 al2023@vYYYYMMDD로 날짜를 고정한다.
   amiSelectorTerms:
     - alias: al2023@latest
+  # 이슈 #92: SN1(ap-northeast-2a)이 단편화돼 Prefix Delegation용 연속 /28을
+  # 못 내줘서 한동안 SN2(ap-northeast-2c)만 쓰게 고정했었다. Prefix Delegation을
+  # 지금 껐고(Fundit-Infra 이슈 #72) 개별 IP 할당은 SN1도 문제없어서 태그 기반으로
+  # 두 서브넷 다 허용한다. redis·loki·tempo는 SN1(zone a)에 볼륨이 고정돼 있어,
+  # SN2 전용으로는 그 존에 교체 노드를 못 만들어 노드 1대가 계속 Drifted로 남아있었다.
   subnetSelectorTerms:
     - tags:
         karpenter.sh/discovery: fundit-dev-eks

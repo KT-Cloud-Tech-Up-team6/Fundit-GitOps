@@ -1,0 +1,122 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fundit-ai-funding-story-worker
+  namespace: dev
+  labels:
+    app.kubernetes.io/name: fundit-ai-funding-story-worker
+    app.kubernetes.io/component: worker
+    app.kubernetes.io/part-of: fundit
+spec:
+  replicas: 1
+  revisionHistoryLimit: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: fundit-ai-funding-story-worker
+      app.kubernetes.io/component: worker
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: fundit-ai-funding-story-worker
+        app.kubernetes.io/component: worker
+        app.kubernetes.io/part-of: fundit
+    spec:
+      serviceAccountName: funding-story-ai
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 2000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: worker
+          image: 899957568205.dkr.ecr.ap-northeast-2.amazonaws.com/fundit-ai-funding-story:sha-b93736adee91062fa2ee90c88387b30a1c6f6bcb@sha256:f97e62765a0ea86861e74e85f82218911f117f59d9851369bc092a12a202bf14
+          imagePullPolicy: IfNotPresent
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: "1"
+              memory: 2Gi
+          command: ["/app/.venv/bin/python", "-m", "funding_story.worker"]
+          args: ["--lane", "funding-story"]
+          envFrom:
+            - configMapRef:
+                name: funding-story-ai-runtime
+          env:
+            - name: DB_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: funding-story-ai-db
+                  key: host
+            - name: DB_PORT
+              valueFrom:
+                secretKeyRef:
+                  name: funding-story-ai-db
+                  key: port
+            - name: DB_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: funding-story-ai-db
+                  key: dbname
+            - name: DB_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: funding-story-ai-db
+                  key: username
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: funding-story-ai-db
+                  key: password
+            - name: AI_SERVICE_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: funding-story-ai-auth
+                  key: service-token
+            - name: INTERNAL_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: fundit-backend-secrets
+                  key: internal-api-key
+          volumeMounts:
+            - name: google-wif-config
+              mountPath: /var/run/secrets/google-wif
+              readOnly: true
+            - name: google-wif-token
+              mountPath: /var/run/secrets/google-identity
+              readOnly: true
+            - name: openai-wif-token
+              mountPath: /var/run/secrets/openai-wif
+              readOnly: true
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ALL]
+      volumes:
+        - name: google-wif-config
+          configMap:
+            name: funding-story-ai-google-wif
+            defaultMode: 0440
+            items:
+              - key: credentials.json
+                path: credentials.json
+        - name: google-wif-token
+          projected:
+            defaultMode: 0440
+            sources:
+              - serviceAccountToken:
+                  path: token
+                  audience: https://iam.googleapis.com/projects/254172583499/locations/global/workloadIdentityPools/funding-story-dev/providers/eks-dev
+                  expirationSeconds: 3600
+        - name: openai-wif-token
+          projected:
+            defaultMode: 0440
+            sources:
+              - serviceAccountToken:
+                  path: token
+                  audience: https://api.openai.com/v1
+                  expirationSeconds: 3600
