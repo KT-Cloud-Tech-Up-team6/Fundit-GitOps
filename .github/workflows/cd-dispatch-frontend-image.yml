@@ -37,6 +37,8 @@ jobs:
     if: github.ref == 'refs/heads/main'
     # image 이름과 GitOps 경로는 공통 workflow의 frontend allow-list에서만 결정됩니다.
     uses: ./.github/workflows/cd-update-image.yml
+    secrets:
+      GITOPS_CD_APP_PRIVATE_KEY: ${{ secrets.GITOPS_CD_APP_PRIVATE_KEY }}
     with:
       # service는 고정값입니다. 호출자가 backend/ai 또는 임의 경로로 전환할 수 없습니다.
       service: frontend
