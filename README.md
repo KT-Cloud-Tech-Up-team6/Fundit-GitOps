@@ -103,30 +103,51 @@ metadata:
 | Frontend | `fundit-frontend` | `sha-<git-commit-sha>` |
 | AI Cuesheet | `fundit-ai-cuesheet` | `sha-<git-commit-sha>` |
 | AI Copilot·Highlight | 서비스별 ECR Repository | `sha-<git-commit-sha>` |
+| AI Funding Story runtime | `fundit-ai-funding-story` | `sha-<git-commit-sha>` |
+| AI Funding Story migration | `fundit-ai-funding-story` | `sha-<git-commit-sha>-migration` |
 
 태그는 소스 커밋 추적에 사용하고, Deployment에는 가능하면 `tag@sha256:digest` 형식으로
 digest까지 고정합니다. 롤백할 수 있도록 배포에 사용한 digest를 Git 이력에 남깁니다.
 
 ### 자동 이미지 갱신
 
-Frontend CI는 ECR push 후 `cd-dispatch-frontend-image.yml`을 호출합니다. Backend와
-Copilot·Highlight용 진입점은 각각 `cd-dispatch-backend-image.yml`,
-`cd-dispatch-copilot-image.yml`, `cd-dispatch-highlight-image.yml`입니다. 이 세
-진입점은 GitOps 쪽 허용 목록에서 ECR Repository와 수정 파일을 고정하며, tag/SHA,
-ECR tag→digest, 소스 브랜치 및 Backend 서비스별 전진 여부를 검증합니다. 이미지
-값 외의 파일 변경이 생기면 push하지 않습니다.
+각 소스 저장소의 ECR push 성공 후 GitOps의 서비스별 `workflow_dispatch`를 호출합니다.
+Frontend·Backend·Copilot·Highlight·Cuesheet는 각각
+`cd-dispatch-frontend-image.yml`, `cd-dispatch-backend-image.yml`,
+`cd-dispatch-copilot-image.yml`, `cd-dispatch-highlight-image.yml`,
+`cd-dispatch-cuesheet-image.yml`을 사용합니다. Funding Story는 runtime과 Flyway
+migration의 tag/digest를 한 요청으로 전달하는
+`cd-dispatch-funding-story-images.yml`을 사용합니다. Copilot은 소스 CI PR 병합 후
+실제 E2E 확인이 남아 있습니다.
 
-BE·AI 자동 배포는 각 소스 저장소의 ECR push 성공 후 dispatch 단계와 Actions Secret
-`FUNDIT_GITOPS_TOKEN`, 그리고 GitOps의 `GITOPS_BE_AI_ECR_READ_ROLE_ARN`에 지정된
-ECR 읽기 Role이 준비된 뒤에만 동작합니다. 소스 CI에는 GitOps `Actions: write`만
-부여하고 `Contents: write`는 부여하지 않습니다. 외부 호출이 실패하면 GitOps
-Actions 실행 기록에서 입력 검증·ECR 검증·push 단계를 확인한 뒤, 원인 수정 후
-같은 tag/digest로 다시 호출합니다. 잘못된 이미지가 반영되면 마지막 정상 digest의
-Git commit으로 revert한 뒤 Argo CD Sync와 Pod imageID를 확인합니다.
+서비스 CI의 `FUNDIT_GITOPS_TOKEN`은 **GitOps 저장소의 Actions: write만** 가진
+액세스 토큰입니다. GitOps 파일을 직접 쓸 수 없으며, GitOps 내부 workflow가
+`GITOPS_CD_APP_PRIVATE_KEY`로 발급한 App 설치 토큰으로 허용된 파일만 수정합니다.
+두 자격증명을 혼동해 GitHub App PEM 개인키를 `FUNDIT_GITOPS_TOKEN`에 넣지 마세요.
+BE·AI 검증 workflow는 `GITOPS_BE_AI_ECR_READ_ROLE_ARN`의 ECR 읽기 권한으로
+tag→digest를 대조합니다. Cuesheet는 비공개 소스의 최신 HEAD를 직접 조회하지
+않고, main 전용 ECR Push Role로 올라온 tag/digest를 검증합니다. Funding Story는
+runtime·migration 이미지를 같은 소스 SHA로 갱신하고 PreSync Flyway Job 성공 후
+API·worker를 적용합니다.
 
-AI Cuesheet는 비공개 소스 브랜치 검증 권한이 정해지지 않아, Funding Story는
-Flyway migration 이미지의 선행 성공을 보장하는 전용 흐름이 필요해 이번
-단순 이미지 갱신 진입점에서 제외합니다.
+### 이미지 갱신 실패 시 확인 순서
+
+1. 소스 저장소 Actions에서 해당 브랜치의 CI 빌드·테스트와 ECR push가 성공했는지
+   확인합니다. Backend는 `develop`, Highlight는 `master`, 나머지 AI는 `main`을
+   사용합니다. Backend는 변경된 서비스의 JAR artifact가 없으면 CD를 건너뜁니다.
+2. 소스 CI의 `Dispatch GitOps image update` 단계가 실패하고 GitOps Actions 실행이
+   없다면, 해당 저장소의 `FUNDIT_GITOPS_TOKEN` 등록·권한·만료와 오류 메시지를
+   확인합니다. Secret 원문을 로그나 이슈에 출력하지 않습니다.
+3. GitOps dispatch 실행이 실패했다면 입력 tag/SHA 형식, 소스 브랜치 전진 여부,
+   ECR tag→digest 일치, ECR 조회 Role, App 토큰 발급, 허용 파일 검사, Git push
+   순서로 실패 단계를 확인합니다. 검증을 우회하거나 digest만 임의로 바꾸지 않습니다.
+4. 원인을 고친 뒤 **해당 소스 SHA가 아직 배포 브랜치의 HEAD일 때만** 소스 CI의
+   실패 Job을 재실행합니다. 이미 새 커밋이 올라왔다면 현재 HEAD의 CI부터
+   다시 실행해 오래된 이미지를 배포하지 않습니다. GitOps 쪽 실행이 성공했어도
+   tag/digest가 이미 같으면 새 커밋 없이 정상 종료할 수 있습니다.
+5. GitOps `main` 이미지 갱신 커밋과 Argo CD `fundit-dev`의 targetRevision,
+   Sync/Health, Deployment의 실제 tag@digest 및 새 Pod Ready를 차례로 확인합니다.
+   `Synced`만 보고 실제 Pod 교체가 끝났다고 판단하지 않습니다.
 
 ## 변경 및 검증
 
@@ -149,9 +170,13 @@ kubectl apply --dry-run=server -k dev
 
 ## 롤백
 
-애플리케이션 장애 시 마지막 정상 이미지 digest가 기록된 Git revision으로 되돌립니다.
-Argo CD가 되돌린 선언을 자동 동기화한 뒤 Deployment rollout과 Health Check를 확인합니다.
-DB·PVC·StorageClass처럼 데이터에 영향을 주는 리소스는 단순 revert 전에 영향도를 검토합니다.
+애플리케이션 장애 시 마지막 정상 tag/digest를 Git 이력에서 확인하고, 해당 서비스의
+이미지 참조만 되돌리는 PR을 검토·병합합니다. 새 소스 CI가 다시 실행되면 자동갱신이
+재적용될 수 있으므로 원인과 재배포 일정을 먼저 공유합니다. Argo CD가 되돌린 선언을
+자동 동기화한 뒤 새 Pod의 이미지와 Health Check를 확인합니다. Funding Story는
+runtime과 migration의 호환성 및 이미 적용된 Flyway 스키마를 먼저 검토합니다.
+이미지 롤백이 DB migration 자체를 되돌리지는 않습니다. DB·PVC·StorageClass처럼
+데이터에 영향을 주는 리소스는 단순 revert 전에 영향도를 검토합니다.
 
 ## 관련 저장소
 
