@@ -1,0 +1,31 @@
+name: Dispatch Copilot image update
+
+# Fundit-Ai-copilot main CI calls this after its ECR push.
+on:
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        required: true
+        type: string
+      image_digest:
+        required: true
+        type: string
+      source_sha:
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  update-copilot-image:
+    if: github.ref == 'refs/heads/main'
+    uses: ./.github/workflows/cd-update-backend-ai-image.yml
+    secrets:
+      GITOPS_CD_APP_PRIVATE_KEY: ${{ secrets.GITOPS_CD_APP_PRIVATE_KEY }}
+    with:
+      service: ai-copilot
+      image_tag: ${{ inputs.image_tag }}
+      image_digest: ${{ inputs.image_digest }}
+      source_sha: ${{ inputs.source_sha }}
