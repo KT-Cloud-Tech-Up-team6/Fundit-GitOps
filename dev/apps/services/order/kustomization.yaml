@@ -8,5 +8,5 @@ resources:
 
 images:
   - name: 899957568205.dkr.ecr.ap-northeast-2.amazonaws.com/fundit-backend
-    newTag: sha-order-service-f8be5ffda8c7f5d3208f4f9ba6d8557ab54bab76
-    digest: sha256:77f3a552f04c6a1d092903f701d1050601cd3a3acb150c00ce0d8bc69366b6ca
+    newTag: sha-order-service-4e40800bedbff7087a0efae6727a07c45048e41c
+    digest: sha256:290027692b932e8dc05ad48763533d5134912181e7074547dcae9883e8fb5a79
