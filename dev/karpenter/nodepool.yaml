@@ -13,8 +13,7 @@ spec:
         - key: kubernetes.io/arch
           operator: In
           values: ["amd64"]
-        # 인터럽션 큐(SQS) 없이 spot을 켜면 노드 회수 시 파드가 경고 없이 죽는다.
-        # Fundit-Infra에 인터럽션 큐가 추가되기 전까지는 on-demand만 허용한다.
+        # spot은 taint가 있는 fundit-dev-spot NodePool에서만 쓴다. 이 NodePool은 on-demand만 허용한다.
         - key: karpenter.sh/capacity-type
           operator: In
           values: ["on-demand"]

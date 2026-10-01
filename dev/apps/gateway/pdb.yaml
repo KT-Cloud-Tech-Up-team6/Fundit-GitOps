@@ -1,0 +1,13 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: fundit-gateway
+  namespace: dev
+spec:
+  # 노드 정리가 NodePool마다 따로 일어나도 파드 1개는 남긴다.
+  minAvailable: 1
+  # 준비되지 않은 파드는 PDB와 무관하게 옮겨 노드 정리가 막히지 않게 한다.
+  unhealthyPodEvictionPolicy: AlwaysAllow
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: fundit-gateway

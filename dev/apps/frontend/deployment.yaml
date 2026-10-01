@@ -21,6 +21,13 @@ spec:
       labels:
         app: fundit-frontend
     spec:
+      # spot NodePool 사용을 허용한다. 두 파드가 모두 spot에 있고 두 노드가 동시에 회수되면
+      # 새 파드가 뜰 때까지(약 1~2분) 서비스가 중단될 수 있다. dev에서는 이 위험을 수용한다.
+      tolerations:
+        - key: fundit.io/spot
+          operator: Equal
+          value: "true"
+          effect: NoSchedule
       # 한 AZ 장애에도 파드가 남도록 2a·2c에 나눠 띄운다.
       topologySpreadConstraints:
         - maxSkew: 1
@@ -81,6 +88,11 @@ spec:
             periodSeconds: 10
             timeoutSeconds: 2
             failureThreshold: 3
+          # ALB가 대상에서 빼기 전에 들어온 요청을 처리하도록 종료를 늦춘다.
+          lifecycle:
+            preStop:
+              sleep:
+                seconds: 15
           resources:
             requests:
               cpu: 100m

@@ -1,0 +1,44 @@
+apiVersion: karpenter.sh/v1
+kind: NodePool
+metadata:
+  name: fundit-dev-spot
+spec:
+  # spot을 허용한 파드에 새 노드가 필요할 때 fundit-dev-default보다 이 NodePool을 먼저 쓴다.
+  weight: 10
+  template:
+    spec:
+      nodeClassRef:
+        group: karpenter.k8s.aws
+        kind: EC2NodeClass
+        name: fundit-dev-default
+      # toleration을 명시한 파드만 올라오게 해 Kafka·Prometheus 등은 spot에 가지 않는다.
+      taints:
+        - key: fundit.io/spot
+          value: "true"
+          effect: NoSchedule
+      requirements:
+        - key: kubernetes.io/arch
+          operator: In
+          values: ["amd64"]
+        - key: karpenter.sh/capacity-type
+          operator: In
+          values: ["spot"]
+        - key: karpenter.k8s.aws/instance-category
+          operator: In
+          values: ["t"]
+        - key: karpenter.k8s.aws/instance-generation
+          operator: Gt
+          values: ["2"]
+        - key: karpenter.k8s.aws/instance-size
+          operator: In
+          values: ["medium", "large"]
+      expireAfter: 720h
+  disruption:
+    consolidationPolicy: WhenEmptyOrUnderutilized
+    consolidateAfter: 5m
+    budgets:
+      - nodes: "1"
+  # large 두 대(메모리 약 15.3Gi)에 드리프트 교체 중 잠깐 같이 뜨는 한 대분을 더한다.
+  limits:
+    cpu: "8"
+    memory: 24Gi
