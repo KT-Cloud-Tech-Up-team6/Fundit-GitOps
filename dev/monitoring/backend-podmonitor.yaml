@@ -27,10 +27,47 @@ spec:
       interval: 15s
       scrapeTimeout: 10s
 ---
+# AI Copilot (포트: 8080, 경로: /metrics)
 apiVersion: monitoring.coreos.com/v1
 kind: PodMonitor
 metadata:
-  name: ai-services-metrics
+  name: ai-copilot-metrics
+  namespace: dev
+  labels:
+    release: kube-prometheus-stack
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: fundit-ai-copilot
+  podMetricsEndpoints:
+    - port: http
+      path: /metrics
+      interval: 15s
+      scrapeTimeout: 10s
+---
+# AI Cuesheet (포트: 8420, 경로: /metrics)
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: ai-cuesheet-metrics
+  namespace: dev
+  labels:
+    release: kube-prometheus-stack
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: fundit-ai-cuesheet
+  podMetricsEndpoints:
+    - port: http
+      path: /metrics
+      interval: 15s
+      scrapeTimeout: 10s
+---
+# AI Highlight & Funding Story (포트: 8000, 경로: /metrics)
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: ai-8000-services-metrics
   namespace: dev
   labels:
     release: kube-prometheus-stack
@@ -40,8 +77,6 @@ spec:
       - key: app.kubernetes.io/name
         operator: In
         values:
-          - fundit-ai-copilot
-          - fundit-ai-cuesheet
           - fundit-ai-highlight
           - fundit-ai-funding-story
   podMetricsEndpoints:
