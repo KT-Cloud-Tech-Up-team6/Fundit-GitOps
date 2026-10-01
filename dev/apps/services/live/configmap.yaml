@@ -14,6 +14,8 @@ data:
   LIVE_IVS_MODE: aws
   LIVE_IVS_REGION: ap-northeast-2
   LIVE_IVS_ENVIRONMENT: dev
+  LIVE_RECORDING_QUEUE_URL: "https://sqs.ap-northeast-2.amazonaws.com/899957568205/fundit-dev-live-recording-queue"
+  LIVE_IVS_RECORDING_CONFIG_ARN: "arn:aws:ivs:ap-northeast-2:899957568205:recording-configuration/nYGZVOj4FA9C"
   LIVE_AI_MODE: http
   LIVE_AI_BASE_URL: http://fundit-ai-copilot-svc:8080/api/v1/ai
   LIVE_CUESHEET_AI_BASE_URL: http://fundit-ai-cuesheet-svc:8420
