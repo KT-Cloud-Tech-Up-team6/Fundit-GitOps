@@ -27,60 +27,27 @@ spec:
       interval: 15s
       scrapeTimeout: 10s
 ---
-# AI Copilot (포트: 8080, 경로: /metrics)
-apiVersion: monitoring.coreos.com/v1
-kind: PodMonitor
-metadata:
-  name: ai-copilot-metrics
-  namespace: dev
-  labels:
-    release: kube-prometheus-stack
-spec:
-  selector:
-    matchLabels:
-      app.kubernetes.io/name: fundit-ai-copilot
-  podMetricsEndpoints:
-    - port: http
-      path: /metrics
-      interval: 15s
-      scrapeTimeout: 10s
----
-# AI Cuesheet (포트: 8420, 경로: /metrics)
-apiVersion: monitoring.coreos.com/v1
-kind: PodMonitor
-metadata:
-  name: ai-cuesheet-metrics
-  namespace: dev
-  labels:
-    release: kube-prometheus-stack
-spec:
-  selector:
-    matchLabels:
-      app.kubernetes.io/name: fundit-ai-cuesheet
-  podMetricsEndpoints:
-    - port: http
-      path: /metrics
-      interval: 15s
-      scrapeTimeout: 10s
----
-# AI Highlight & Funding Story (포트: 8000, 경로: /metrics)
-apiVersion: monitoring.coreos.com/v1
-kind: PodMonitor
-metadata:
-  name: ai-8000-services-metrics
-  namespace: dev
-  labels:
-    release: kube-prometheus-stack
-spec:
-  selector:
-    matchExpressions:
-      - key: app.kubernetes.io/name
-        operator: In
-        values:
-          - fundit-ai-highlight
-          - fundit-ai-funding-story
-  podMetricsEndpoints:
-    - port: http
-      path: /metrics
-      interval: 15s
-      scrapeTimeout: 10s
+# NOTE: AI 서비스들(copilot:8080, cuesheet:8420, highlight:8000, funding-story:8000)은
+# 현재 도커 이미지에 프로메테우스 /metrics 엔드포인트가 미구현 상태(404 NotFound 또는 303 Redirect)이므로
+# Prometheus TargetDown 방지를 위해 PodMonitor 대상에서 임시 제외합니다.
+# AI 파이프라인 팀과 엔드포인트(prometheus-fastapi-instrumentator 등) 추가 협의 후 주석 해제 예정.
+#
+# ---
+# # AI Cuesheet (포트: 8420, 경로: /metrics - 현재 미지원)
+# apiVersion: monitoring.coreos.com/v1
+# kind: PodMonitor
+# metadata:
+#   name: ai-cuesheet-metrics
+#   namespace: dev
+#   labels:
+#     release: kube-prometheus-stack
+# spec:
+#   selector:
+#     matchLabels:
+#       app.kubernetes.io/name: fundit-ai-cuesheet
+#   podMetricsEndpoints:
+#     - port: http
+#       path: /metrics
+#       interval: 15s
+#       scrapeTimeout: 10s
+
