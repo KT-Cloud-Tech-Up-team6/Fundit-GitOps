@@ -1,0 +1,55 @@
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: fundit-notification
+  namespace: dev
+  labels:
+    app.kubernetes.io/name: fundit-notification
+    app.kubernetes.io/part-of: fundit
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: fundit-notification
+  minReplicaCount: 1
+  maxReplicaCount: 3
+  pollingInterval: 15
+  cooldownPeriod: 300
+  advanced:
+    restoreToOriginalReplicaCount: false
+    horizontalPodAutoscalerConfig:
+      behavior:
+        scaleUp:
+          stabilizationWindowSeconds: 0
+          policies:
+            - type: Percent
+              value: 100
+              periodSeconds: 15
+        scaleDown:
+          stabilizationWindowSeconds: 300
+          policies:
+            - type: Percent
+              value: 50
+              periodSeconds: 60
+  triggers:
+    # 1. 알림 요청 토픽 메시지 랙 감지
+    - type: kafka
+      metadata:
+        bootstrapServers: kafka.kafka.svc.cluster.local:9092
+        consumerGroup: notification-service
+        topic: notification.raised.v1
+        lagThreshold: "30"
+        offsetResetPolicy: earliest
+    # 2. 라이브 방송 시작 토픽 메시지 랙 감지
+    - type: kafka
+      metadata:
+        bootstrapServers: kafka.kafka.svc.cluster.local:9092
+        consumerGroup: notification-service
+        topic: live.started.v1
+        lagThreshold: "30"
+        offsetResetPolicy: earliest
+    # 3. CPU 사용률 급증 시 선제적 스케일아웃 (OR 조건)
+    - type: cpu
+      metricType: Utilization
+      metadata:
+        value: "70"
