@@ -32,7 +32,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: api
-          image: 899957568205.dkr.ecr.ap-northeast-2.amazonaws.com/fundit-ai-funding-story:sha-933d5591c6a2879948576d89f647e469b27f2f8b@sha256:40cb5035f6765094e3821e0ce9733153923eb416ef17acb24297098955684fa5
+          image: 899957568205.dkr.ecr.ap-northeast-2.amazonaws.com/fundit-ai-funding-story:sha-2bb048d96b346293f955d58f7b7f25aa616ef882@sha256:380ff939ad8ea41334b952d7809587d59b6401dc148ce1ef0e321e8a4aff2ec1
           imagePullPolicy: IfNotPresent
           resources:
             requests:
