@@ -88,6 +88,11 @@ spec:
             periodSeconds: 10
             timeoutSeconds: 2
             failureThreshold: 3
+          # ALB가 대상에서 빼기 전에 들어온 요청을 처리하도록 종료를 늦춘다.
+          lifecycle:
+            preStop:
+              sleep:
+                seconds: 15
           resources:
             requests:
               cpu: 100m

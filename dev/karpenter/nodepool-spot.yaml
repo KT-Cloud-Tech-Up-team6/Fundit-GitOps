@@ -38,7 +38,7 @@ spec:
     consolidateAfter: 5m
     budgets:
       - nodes: "1"
-  # large 한 대(메모리 약 7.7Gi)가 뜬 뒤에도 두 번째 AZ에 spot 노드를 만들 수 있게 둔다.
+  # large 두 대(메모리 약 15.3Gi)에 드리프트 교체 중 잠깐 같이 뜨는 한 대분을 더한다.
   limits:
     cpu: "8"
-    memory: 16Gi
+    memory: 24Gi
