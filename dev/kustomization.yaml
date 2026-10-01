@@ -12,6 +12,8 @@ resources:
   - karpenter/nodepool-spot.yaml
   - monitoring/alerts.yaml
   - monitoring/alertmanagerconfig.yaml
+  - monitoring/kafka-exporter.yaml
+  - monitoring/backend-podmonitor.yaml
   - monitoring/dashboards/hpa.yaml
   - monitoring/dashboards/infra-overview.yaml
   - monitoring/dashboards/ingress.yaml

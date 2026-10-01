@@ -3,6 +3,10 @@ kind: Service
 metadata:
   name: fundit-ai-copilot-svc
   namespace: dev
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "8080"
+    prometheus.io/path: "/metrics"
   labels:
     app.kubernetes.io/name: fundit-ai-copilot
     app.kubernetes.io/part-of: fundit

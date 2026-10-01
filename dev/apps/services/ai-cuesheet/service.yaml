@@ -3,6 +3,10 @@ kind: Service
 metadata:
   name: fundit-ai-cuesheet-svc
   namespace: dev
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "8420"
+    prometheus.io/path: "/metrics"
   labels:
     app.kubernetes.io/name: fundit-ai-cuesheet
     app.kubernetes.io/part-of: fundit
