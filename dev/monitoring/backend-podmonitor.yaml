@@ -13,6 +13,7 @@ spec:
         values:
           - fundit-auth
           - fundit-fulfillment
+          - fundit-gateway
           - fundit-live
           - fundit-member
           - fundit-notification
