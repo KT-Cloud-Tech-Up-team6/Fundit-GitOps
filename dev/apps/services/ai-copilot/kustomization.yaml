@@ -9,5 +9,5 @@ resources:
 
 images:
   - name: 899957568205.dkr.ecr.ap-northeast-2.amazonaws.com/fundit-ai-copilot
-    newTag: sha-302ee79945b6883f23d58c1b2380e86f5a99bbfa
-    digest: sha256:fd187a020a1b7b80485e132a06e2ccf76c3c52d903f73b89e1d024b32e5fc17a
+    newTag: sha-4b5b7c70251bd4124b36e1a212945f3ef29ccd08
+    digest: sha256:6b241c1d630f070e11422ce08fa2c52cf563a074a8f05abcdfeaf0e7ed502d7e
