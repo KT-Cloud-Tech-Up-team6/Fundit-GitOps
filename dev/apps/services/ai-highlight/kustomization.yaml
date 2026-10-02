@@ -10,5 +10,5 @@ resources:
 
 images:
   - name: 899957568205.dkr.ecr.ap-northeast-2.amazonaws.com/fundit-ai-highlight
-    newTag: sha-69d02188a61e91341dda9c9587d6958399c727ab
-    digest: sha256:9bb75e7114a94438e67783b0b4a85d163122b6bdf3faee1cce5ecc5442a83c27
+    newTag: sha-67f458e229d92d95ece397ec054e803c2a495080
+    digest: sha256:c38d1d0862a1e42caab9421d78f90d5317313fbf76c03bf0d558b4ad73ab8586
