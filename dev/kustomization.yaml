@@ -13,7 +13,8 @@ resources:
   - monitoring/alerts.yaml
   - monitoring/alertmanagerconfig.yaml
   - monitoring/kafka-exporter.yaml
-  - monitoring/backend-podmonitor.yaml
+  # NOTE: 백엔드 서비스의 /actuator/prometheus 미구현(404/401)에 따른 TargetDown 알림 노이즈 방지를 위해 임시 제외
+  # - monitoring/backend-podmonitor.yaml
   - monitoring/dashboards/hpa.yaml
   - monitoring/dashboards/infra-overview.yaml
   - monitoring/dashboards/ingress.yaml
