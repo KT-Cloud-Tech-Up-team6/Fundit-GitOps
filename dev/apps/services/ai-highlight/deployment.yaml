@@ -50,6 +50,11 @@ spec:
                 secretKeyRef:
                   name: fundit-ai-highlight-secret
                   key: gemini-api-key
+            - name: INTERNAL_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: fundit-backend-secrets
+                  key: internal-api-key
           volumeMounts:
             - name: data
               mountPath: /data
