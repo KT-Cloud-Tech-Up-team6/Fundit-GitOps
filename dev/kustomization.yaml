@@ -4,6 +4,7 @@ kind: Kustomization
 resources:
   - apps
   - cnpg/cluster.yaml
+  - cnpg/pooler.yaml
   - cnpg/scheduled-backup.yaml
   - cnpg/podmonitor.yaml
   - external-secrets
