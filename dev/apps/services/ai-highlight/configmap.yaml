@@ -12,6 +12,8 @@ data:
   HF_HOME: /data/hf-cache
   LOG_FORMAT: json
   LOG_LEVEL: INFO
+  MEDIA_S3_BUCKET: fundit-media-dev-team6
+  PUBLIC_BASE_URL: https://infrastudy.store
   # 새 live.ended.v1 consumer 이미지 배포 시 클러스터 내부 Kafka에 연결한다.
   KAFKA_BOOTSTRAP_SERVERS: kafka.kafka.svc.cluster.local:9092
   LIVE_SERVICE_URL: http://fundit-live-svc:8080
