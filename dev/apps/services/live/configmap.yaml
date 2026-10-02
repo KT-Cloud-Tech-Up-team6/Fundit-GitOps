@@ -18,6 +18,7 @@ data:
   LIVE_IVS_RECORDING_CONFIG_ARN: "arn:aws:ivs:ap-northeast-2:899957568205:recording-configuration/nYGZVOj4FA9C"
   LIVE_AI_MODE: http
   LIVE_AI_BASE_URL: http://fundit-ai-copilot-svc:8080/api/v1/ai
+  LIVE_HIGHLIGHT_AI_BASE_URL: http://fundit-ai-highlight-svc:8000/api/v1/ai
   LIVE_CUESHEET_AI_BASE_URL: http://fundit-ai-cuesheet-svc:8420
   PROJECT_SERVICE_BASE_URL: http://fundit-project-svc:8080
   MEMBER_SERVICE_BASE_URL: http://fundit-member-svc:8080
