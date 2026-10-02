@@ -47,6 +47,7 @@ permissions:
 # 여러 서비스가 동시에 main을 갱신해도 push 충돌이나 변경 유실이 없도록 직렬화합니다.
 concurrency:
   group: gitops-image-update-main
+  queue: max
   cancel-in-progress: false
 
 jobs:
