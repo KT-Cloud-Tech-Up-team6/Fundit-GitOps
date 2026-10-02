@@ -25,7 +25,7 @@ spec:
       containers:
         - name: flyway
           # AI team migration image from source commit b93736a; reconfirm in ECR before activation.
-          image: 899957568205.dkr.ecr.ap-northeast-2.amazonaws.com/fundit-ai-funding-story@sha256:90a2a5a06a54a90d127cd721dd079ec450cddff31924db8e501bd95593b0df2f
+          image: 899957568205.dkr.ecr.ap-northeast-2.amazonaws.com/fundit-ai-funding-story@sha256:5eeef5eca06aa43de3b99d31cfdc5565c5b52e649bbf9578fdebfd2a1ea2cf76
           imagePullPolicy: IfNotPresent
           env:
             - name: FLYWAY_URL
