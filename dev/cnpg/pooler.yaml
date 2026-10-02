@@ -1,0 +1,42 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: Pooler
+metadata:
+  name: fundit-dev-postgres-pooler
+  namespace: dev
+  labels:
+    app.kubernetes.io/name: fundit-dev-postgres-pooler
+    app.kubernetes.io/part-of: fundit
+spec:
+  cluster:
+    name: fundit-dev-postgres
+
+  # 고가용성(HA)을 위해 2대 실행
+  instances: 2
+  type: rw
+
+  pgbouncer:
+    # 트랜잭션 풀링 모드: 쿼리 트랜잭션이 끝나면 즉시 커넥션을 풀에 반납하여 커넥션 다중화(Multiplexing)
+    poolMode: transaction
+    parameters:
+      max_client_conn: "1000"
+      default_pool_size: "20"
+      min_pool_size: "5"
+      reserve_pool_size: "5"
+      max_db_connections: "80"
+      # Spring Boot / HikariCP 연동 호환성 파라미터
+      server_reset_query: "DISCARD ALL"
+      ignore_startup_parameters: "extra_float_digits"
+
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: fundit-dev-postgres-pooler
+    spec:
+      # 가용영역(AZ) 편중 방지를 위한 Multi-AZ 자동 분산
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: "topology.kubernetes.io/zone"
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              cnpg.io/poolerName: fundit-dev-postgres-pooler
