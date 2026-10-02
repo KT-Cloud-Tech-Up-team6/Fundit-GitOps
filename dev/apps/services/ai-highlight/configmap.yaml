@@ -17,3 +17,6 @@ data:
   # 새 live.ended.v1 consumer 이미지 배포 시 클러스터 내부 Kafka에 연결한다.
   KAFKA_BOOTSTRAP_SERVERS: kafka.kafka.svc.cluster.local:9092
   LIVE_SERVICE_URL: http://fundit-live-svc:8080
+  # live.ended.v1 방송 종료 이벤트 자동 수신 컨슈머 활성화
+  ENABLE_KAFKA_CONSUMER: "1"
+
