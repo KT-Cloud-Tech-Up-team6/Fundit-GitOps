@@ -16,7 +16,8 @@
   - `poolMode: transaction` (트랜잭션 단위 커넥션 다중화)
   - `parameters.max_client_conn: "1000"` (클라이언트 최대 1,000개 수용)
   - `parameters.default_pool_size: "20"` (실제 DB 연결 20개 내외 압축)
-  - `parameters.server_reset_query: "DISCARD ALL"` (Spring/HikariCP 트랜잭션 안전성)
+  - `parameters.max_db_connections: "30"` (파드당 DB별 연결 상한. DB 하나 기준 2대 합계 60)
+  - `spec.template.spec.containers[pgbouncer].resources`: requests cpu 100m / memory 100Mi, limits cpu 500m / memory 500Mi
   - `spec.template.spec.topologySpreadConstraints`: `topology.kubernetes.io/zone` 기반 Multi-AZ 자동 분산
 
 ### 2) 카프카 알림 토픽 파티션 증설 (1개 ➔ 3개)

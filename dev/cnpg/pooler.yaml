@@ -22,9 +22,8 @@ spec:
       default_pool_size: "20"
       min_pool_size: "5"
       reserve_pool_size: "5"
-      max_db_connections: "80"
-      # Spring Boot / HikariCP 연동 호환성 파라미터
-      server_reset_query: "DISCARD ALL"
+      # 파드마다 DB 별로 적용된다. DB 하나 기준 2대 합계 60 으로 max_connections(100) 안에 들어가게 한다
+      max_db_connections: "30"
       ignore_startup_parameters: "extra_float_digits"
 
   template:
@@ -32,6 +31,16 @@ spec:
       labels:
         app.kubernetes.io/name: fundit-dev-postgres-pooler
     spec:
+      # resources 없으면 BestEffort 로 떠서 노드 메모리 부족 시 가장 먼저 쫓겨난다
+      containers:
+        - name: pgbouncer
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "100Mi"
+            limits:
+              cpu: "500m"
+              memory: "500Mi"
       # 가용영역(AZ) 편중 방지를 위한 Multi-AZ 자동 분산
       topologySpreadConstraints:
         - maxSkew: 1
