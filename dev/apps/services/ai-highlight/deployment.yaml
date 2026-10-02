@@ -20,7 +20,8 @@ spec:
         app.kubernetes.io/name: fundit-ai-highlight
         app.kubernetes.io/part-of: fundit
     spec:
-      automountServiceAccountToken: false
+      automountServiceAccountToken: true
+      serviceAccountName: fundit-ai-sa
       securityContext:
         fsGroup: 10001
         seccompProfile:
@@ -95,8 +96,8 @@ spec:
               memory: 2Gi
       volumes:
         - name: data
-          emptyDir:
-            sizeLimit: 1Gi
+          persistentVolumeClaim:
+            claimName: fundit-ai-highlight-data
         - name: tmp
           emptyDir:
             sizeLimit: 128Mi
