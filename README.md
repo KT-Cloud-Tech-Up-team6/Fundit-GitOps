@@ -37,7 +37,7 @@ Fundit-GitOps/
 │   ├── monitoring/              # PrometheusRule 등 관제 정책
 │   ├── storage/                 # StorageClass
 │   ├── hpa/                     # HPA 준비 영역 (현재 미등록)
-│   └── keda/                    # ScaledObject 준비 영역 (현재 미등록)
+│   └── keda/                    # ScaledObject 오토스케일링 정책 (dev/kustomization.yaml 등록)
 ├── staging/                     # staging 정책 준비 영역
 └── prod/                        # prod 정책 준비 영역
 ```

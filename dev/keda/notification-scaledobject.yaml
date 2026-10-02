@@ -13,8 +13,10 @@ spec:
     name: fundit-notification
   minReplicaCount: 1
   maxReplicaCount: 3
-  pollingInterval: 15
-  cooldownPeriod: 300
+  # NOTE: minReplicaCount >= 1에서는 KEDA pollingInterval/cooldownPeriod 대신
+  # 아래 advanced.horizontalPodAutoscalerConfig.behavior.scaleDown 정책에 의해 스케일다운이 제어됩니다.
+  # pollingInterval: 15
+  # cooldownPeriod: 300
   advanced:
     restoreToOriginalReplicaCount: false
     horizontalPodAutoscalerConfig:
@@ -38,9 +40,9 @@ spec:
       metadata:
         value: "70"
 
-    # NOTE: Kafka Lag 기반 트리거는 토픽 파티션(현재 PartitionCount=1)이 
-    # 최소 3개 이상으로 증설된 이후 유휴 파드(Idle Consumer) 없이 동작하므로,
-    # 파티션 증설 완료 후 주석 해제 예정.
+    # NOTE: notification.raised.v1 및 live.started.v1 토픽의 파티션이 3개로 증설 완료되었습니다.
+    # 이번 PR에서는 CPU 사용률 기반 선제적 스케일링을 우선 배포/검증하고,
+    # Kafka Lag 트리거는 2차 연동 작업에서 활성화할 예정입니다.
     # - type: kafka
     #   metadata:
     #     bootstrapServers: kafka.kafka.svc.cluster.local:9092
