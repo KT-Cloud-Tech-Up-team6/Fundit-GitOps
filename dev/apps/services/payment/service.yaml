@@ -3,10 +3,6 @@ kind: Service
 metadata:
   name: fundit-payment-svc
   namespace: dev
-  annotations:
-    prometheus.io/scrape: "true"
-    prometheus.io/port: "8080"
-    prometheus.io/path: "/actuator/prometheus"
   labels:
     app.kubernetes.io/name: fundit-payment
     app.kubernetes.io/part-of: fundit

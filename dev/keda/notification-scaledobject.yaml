@@ -1,0 +1,60 @@
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: fundit-notification
+  namespace: dev
+  labels:
+    app.kubernetes.io/name: fundit-notification
+    app.kubernetes.io/part-of: fundit
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: fundit-notification
+  minReplicaCount: 1
+  maxReplicaCount: 3
+  # NOTE: minReplicaCount >= 1에서는 KEDA pollingInterval/cooldownPeriod 대신
+  # 아래 advanced.horizontalPodAutoscalerConfig.behavior.scaleDown 정책에 의해 스케일다운이 제어됩니다.
+  # pollingInterval: 15
+  # cooldownPeriod: 300
+  advanced:
+    restoreToOriginalReplicaCount: false
+    horizontalPodAutoscalerConfig:
+      behavior:
+        scaleUp:
+          stabilizationWindowSeconds: 0
+          policies:
+            - type: Percent
+              value: 100
+              periodSeconds: 15
+        scaleDown:
+          stabilizationWindowSeconds: 300
+          policies:
+            - type: Percent
+              value: 50
+              periodSeconds: 60
+  triggers:
+    # 1. CPU 사용률 급증 시 선제적 스케일아웃 (70%)
+    - type: cpu
+      metricType: Utilization
+      metadata:
+        value: "70"
+
+    # NOTE: notification.raised.v1 및 live.started.v1 토픽의 파티션이 3개로 증설 완료되었습니다.
+    # 이번 PR에서는 CPU 사용률 기반 선제적 스케일링을 우선 배포/검증하고,
+    # Kafka Lag 트리거는 2차 연동 작업에서 활성화할 예정입니다.
+    # - type: kafka
+    #   metadata:
+    #     bootstrapServers: kafka.kafka.svc.cluster.local:9092
+    #     consumerGroup: notification-service
+    #     topic: notification.raised.v1
+    #     lagThreshold: "30"
+    #     offsetResetPolicy: earliest
+    # - type: kafka
+    #   metadata:
+    #     bootstrapServers: kafka.kafka.svc.cluster.local:9092
+    #     consumerGroup: notification-service
+    #     topic: live.started.v1
+    #     lagThreshold: "30"
+    #     offsetResetPolicy: earliest
+

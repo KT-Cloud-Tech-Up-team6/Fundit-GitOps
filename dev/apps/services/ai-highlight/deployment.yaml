@@ -20,7 +20,8 @@ spec:
         app.kubernetes.io/name: fundit-ai-highlight
         app.kubernetes.io/part-of: fundit
     spec:
-      automountServiceAccountToken: false
+      automountServiceAccountToken: true
+      serviceAccountName: fundit-ai-sa
       securityContext:
         fsGroup: 10001
         seccompProfile:
@@ -50,6 +51,11 @@ spec:
                 secretKeyRef:
                   name: fundit-ai-highlight-secret
                   key: gemini-api-key
+            - name: INTERNAL_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: fundit-backend-secrets
+                  key: internal-api-key
           volumeMounts:
             - name: data
               mountPath: /data
@@ -89,14 +95,14 @@ spec:
           resources:
             requests:
               cpu: 250m
-              memory: 512Mi
+              memory: 6Gi
             limits:
               cpu: "1"
-              memory: 2Gi
+              memory: 6Gi
       volumes:
         - name: data
-          emptyDir:
-            sizeLimit: 1Gi
+          persistentVolumeClaim:
+            claimName: fundit-ai-highlight-data
         - name: tmp
           emptyDir:
             sizeLimit: 128Mi

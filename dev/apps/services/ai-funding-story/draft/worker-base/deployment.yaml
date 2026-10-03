@@ -32,7 +32,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: worker
-          image: 899957568205.dkr.ecr.ap-northeast-2.amazonaws.com/fundit-ai-funding-story:sha-0c351294be47bf18ec7a8d40f208399cba6a42f1@sha256:47ec8c8444893ef24d3570ead67556ffe54db84510b41e09e00b105b922c5cc5
+          image: 899957568205.dkr.ecr.ap-northeast-2.amazonaws.com/fundit-ai-funding-story:sha-7e910dcdadbc14a2e53524d13a02e7f82ab28524@sha256:55d8c82fa2f764b1dad6c4cc99695b4b22435705e1705bced29b14c0c44f5aee
           imagePullPolicy: IfNotPresent
           resources:
             requests:

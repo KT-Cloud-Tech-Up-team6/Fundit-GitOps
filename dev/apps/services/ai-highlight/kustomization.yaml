@@ -2,11 +2,13 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 resources:
+  - serviceaccount.yaml
+  - pvc.yaml
   - configmap.yaml
   - deployment.yaml
   - service.yaml
 
 images:
   - name: 899957568205.dkr.ecr.ap-northeast-2.amazonaws.com/fundit-ai-highlight
-    newTag: sha-b38a8970704242b0a029748c6c35229117096021
-    digest: sha256:d27203dcc0c6f64623c551f9fd46825ab4b12ec837a938fffe8dd1e7d99502fc
+    newTag: sha-67f458e229d92d95ece397ec054e803c2a495080
+    digest: sha256:c38d1d0862a1e42caab9421d78f90d5317313fbf76c03bf0d558b4ad73ab8586
