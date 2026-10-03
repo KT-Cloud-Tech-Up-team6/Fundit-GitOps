@@ -38,6 +38,10 @@ spec:
             - name: http
               containerPort: 8080
               protocol: TCP
+            # Actuator 관리 포트. 백엔드 이미지가 8081로 분리하기 전에 미리 선언한다.
+            - name: management
+              containerPort: 8081
+              protocol: TCP
           envFrom:
             - configMapRef:
                 name: fundit-fulfillment-config
@@ -85,22 +89,21 @@ spec:
           volumeMounts:
             - name: tmp
               mountPath: /tmp
+          # Actuator 8081 분리 전환 중에는 8080 TCP 체크로 구/신 이미지를 모두 통과시킨다.
+          # 모든 서비스가 새 이미지로 교체된 뒤 8081 /actuator/health httpGet으로 전환한다.
           startupProbe:
-            httpGet:
-              path: /actuator/health
+            tcpSocket:
               port: http
             periodSeconds: 5
             failureThreshold: 30
           readinessProbe:
-            httpGet:
-              path: /actuator/health
+            tcpSocket:
               port: http
             periodSeconds: 5
             timeoutSeconds: 2
             failureThreshold: 3
           livenessProbe:
-            httpGet:
-              path: /actuator/health
+            tcpSocket:
               port: http
             periodSeconds: 10
             timeoutSeconds: 2
