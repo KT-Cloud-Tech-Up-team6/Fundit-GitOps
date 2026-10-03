@@ -7,9 +7,12 @@ metadata:
     app.kubernetes.io/name: fundit-gateway
     app.kubernetes.io/part-of: fundit
   annotations:
-    alb.ingress.kubernetes.io/healthcheck-path: /actuator/health
+    # Actuator가 8081로 분리되어 8080에는 /actuator/health가 없다. ALB 헬스체크가 실패하지
+    # 않도록 Actuator에 의존하지 않는 경로를 쓰고, 404도 "서버 응답 중"으로 본다.
+    # 실제 건강 상태는 Pod readinessProbe(8081 /actuator/health)가 판단한다.
+    alb.ingress.kubernetes.io/healthcheck-path: /
     alb.ingress.kubernetes.io/healthcheck-port: traffic-port
-    alb.ingress.kubernetes.io/success-codes: "200"
+    alb.ingress.kubernetes.io/success-codes: "200-404"
 spec:
   type: ClusterIP
   selector:
