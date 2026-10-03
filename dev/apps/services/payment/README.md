@@ -39,7 +39,7 @@ Payment 배포 후 `/api/v1/payments/**`, `/api/v1/refunds/**`, `/api/v1/settlem
 
 ## 배포 이미지
 
-Backend `develop`의 성공한 payment-service CI/CD 결과를 tag와 digest로 고정합니다.
-
-- commit: `7dd5bd525f5080548f4e2fd7fee835a7fa0e92a9`
-- image digest: `sha256:e7a821e63fb4bbe148b541e5ce23507d426f4c19ec0ab732b24b98d13abcad33`
+Backend `develop`의 성공한 payment-service 이미지가 GitOps 자동 갱신으로 반영됩니다.
+현재 선언된 tag와 digest는 이 디렉터리의 `kustomization.yaml` `images` 항목에서 확인합니다.
+실제 배포 이미지는 `dev/fundit-payment` Deployment와 Pod의 `imageID`로 대조합니다.
+이전 CI 커밋이나 digest를 현재 배포 버전으로 간주하지 않습니다.

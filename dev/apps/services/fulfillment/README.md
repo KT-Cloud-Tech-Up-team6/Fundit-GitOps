@@ -34,7 +34,7 @@ Project 하위 Fulfillment·Shipment의 v1/v2 경로가 Fulfillment 서비스로
 
 ## 배포 이미지
 
-Backend `develop`의 성공한 fulfillment-service CI/CD 결과를 tag와 digest로 고정합니다.
-
-- commit: `9b8db1bf55bf8da762ad2f62f6c63706ecedbfc3`
-- CD run: `35573703082`
+Backend `develop`의 성공한 fulfillment-service 이미지가 GitOps 자동 갱신으로 반영됩니다.
+현재 선언된 tag와 digest는 이 디렉터리의 `kustomization.yaml` `images` 항목에서 확인합니다.
+실제 배포 이미지는 `dev/fundit-fulfillment` Deployment와 Pod의 `imageID`로 대조합니다.
+이전 CI 커밋이나 실행 번호를 현재 배포 버전으로 간주하지 않습니다.
