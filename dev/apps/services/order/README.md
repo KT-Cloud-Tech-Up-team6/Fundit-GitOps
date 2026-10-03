@@ -32,7 +32,7 @@ Order, Coupon, Restock Notification 및 Project 하위 주문·후원자 경로�
 
 ## 배포 이미지
 
-Backend `develop`의 성공한 order-service CI/CD 결과를 tag와 digest로 고정합니다.
-
-- commit: `ce52dd63dac932cb14393bfc1567862d13605934`
-- CD run: `35709719859`
+Backend `develop`의 성공한 order-service 이미지가 GitOps 자동 갱신으로 반영됩니다.
+현재 선언된 tag와 digest는 이 디렉터리의 `kustomization.yaml` `images` 항목에서 확인합니다.
+실제 배포 이미지는 `dev/fundit-order` Deployment와 Pod의 `imageID`로 대조합니다.
+이전 CI 커밋이나 실행 번호를 현재 배포 버전으로 간주하지 않습니다.
