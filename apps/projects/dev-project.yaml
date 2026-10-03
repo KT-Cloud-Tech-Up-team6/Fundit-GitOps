@@ -12,6 +12,8 @@ spec:
       namespace: dev
     - server: https://kubernetes.default.svc
       namespace: monitoring
+    - server: https://kubernetes.default.svc
+      namespace: kafka
   clusterResourceWhitelist:
     - group: ""
       kind: Namespace
