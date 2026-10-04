@@ -14,6 +14,7 @@ resources:
   - keda/notification-scaledobject.yaml
   - monitoring/alerts.yaml
   - monitoring/alertmanagerconfig.yaml
+  - monitoring/podmonitor-backend.yaml
   - monitoring/dashboards/hpa.yaml
   - monitoring/dashboards/infra-overview.yaml
   - monitoring/dashboards/ingress.yaml
