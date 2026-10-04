@@ -115,7 +115,7 @@ spec:
                 - wget -q -T 2 -O /dev/null http://127.0.0.1:8081/actuator/health || wget -q -T 2 -O /dev/null http://127.0.0.1:8080/actuator/health
             periodSeconds: 5
             timeoutSeconds: 5
-            failureThreshold: 30
+            failureThreshold: 60
           readinessProbe:
             exec:
               command:
