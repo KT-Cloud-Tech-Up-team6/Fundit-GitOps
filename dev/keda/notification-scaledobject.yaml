@@ -40,21 +40,18 @@ spec:
       metadata:
         value: "70"
 
-    # NOTE: notification.raised.v1 및 live.started.v1 토픽의 파티션이 3개로 증설 완료되었습니다.
-    # 이번 PR에서는 CPU 사용률 기반 선제적 스케일링을 우선 배포/검증하고,
-    # Kafka Lag 트리거는 2차 연동 작업에서 활성화할 예정입니다.
-    # - type: kafka
-    #   metadata:
-    #     bootstrapServers: kafka.kafka.svc.cluster.local:9092
-    #     consumerGroup: notification-service
-    #     topic: notification.raised.v1
-    #     lagThreshold: "30"
-    #     offsetResetPolicy: earliest
-    # - type: kafka
-    #   metadata:
-    #     bootstrapServers: kafka.kafka.svc.cluster.local:9092
-    #     consumerGroup: notification-service
-    #     topic: live.started.v1
-    #     lagThreshold: "30"
-    #     offsetResetPolicy: earliest
-
+    # notification 소비 토픽 각각의 총 lag가 30건을 넘으면 확장합니다.
+    - type: kafka
+      metadata:
+        bootstrapServers: kafka.kafka.svc.cluster.local:9092
+        consumerGroup: notification-service
+        topic: notification.raised.v1
+        lagThreshold: "30"
+        offsetResetPolicy: earliest
+    - type: kafka
+      metadata:
+        bootstrapServers: kafka.kafka.svc.cluster.local:9092
+        consumerGroup: notification-service
+        topic: live.started.v1
+        lagThreshold: "30"
+        offsetResetPolicy: earliest
