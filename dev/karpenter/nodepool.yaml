@@ -13,8 +13,7 @@ spec:
         - key: kubernetes.io/arch
           operator: In
           values: ["amd64"]
-        # 인터럽션 큐(SQS) 없이 spot을 켜면 노드 회수 시 파드가 경고 없이 죽는다.
-        # Fundit-Infra에 인터럽션 큐가 추가되기 전까지는 on-demand만 허용한다.
+        # spot은 taint가 있는 fundit-dev-spot NodePool에서만 쓴다. 이 NodePool은 on-demand만 허용한다.
         - key: karpenter.sh/capacity-type
           operator: In
           values: ["on-demand"]
@@ -44,7 +43,7 @@ spec:
   # t3/t3a 계열은 small·medium·large 모두 2vCPU로 동일해(메모리만 다름),
   # instance-size 하한(이슈 #47) 적용 시 드리프트 교체 중 헌 노드·새 노드가
   # 잠깐 같이 떠서 순간적으로 2vCPU를 더 쓴다. cpu 12로 그 여유를 더 둔다.
-  # memory는 기존에도 여유가 있던 값이라 비례해 20Gi로 둔다.
+  # memory는 ai-highlight(request 6Gi)용 large 노드 1대와 교체 시 잠깐 더 뜨는 large 1대를 고려해 32Gi로 둔다.
   limits:
     cpu: "12"
-    memory: 20Gi
+    memory: 32Gi

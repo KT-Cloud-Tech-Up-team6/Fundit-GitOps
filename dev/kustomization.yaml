@@ -1,0 +1,23 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - apps
+  - cnpg/cluster.yaml
+  - cnpg/pooler.yaml
+  - cnpg/scheduled-backup.yaml
+  - cnpg/podmonitor.yaml
+  - external-secrets
+  - karpenter/ec2nodeclass.yaml
+  - karpenter/nodepool.yaml
+  - karpenter/nodepool-spot.yaml
+  - keda/notification-scaledobject.yaml
+  - monitoring/alerts.yaml
+  - monitoring/alertmanagerconfig.yaml
+  - monitoring/dashboards/hpa.yaml
+  - monitoring/dashboards/infra-overview.yaml
+  - monitoring/dashboards/ingress.yaml
+  - monitoring/dashboards/service-golden-signals.yaml
+  - monitoring/dashboards/streaming-burst.yaml
+  - storage/storageclass-gp3.yaml
+  - storage/storageclass-gp3-retain.yaml

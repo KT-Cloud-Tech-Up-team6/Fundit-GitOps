@@ -1,0 +1,46 @@
+name: Dispatch Backend image update
+
+# Fundit-backend CD calls this only after a service image is pushed to ECR.
+on:
+  workflow_dispatch:
+    inputs:
+      service:
+        description: Backend service whose image was pushed
+        required: true
+        type: choice
+        options:
+          - auth
+          - member
+          - project
+          - order
+          - payment
+          - fulfillment
+          - notification
+          - search
+          - live
+          - gateway
+      image_tag:
+        required: true
+        type: string
+      image_digest:
+        required: true
+        type: string
+      source_sha:
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  update-backend-image:
+    if: github.ref == 'refs/heads/main'
+    uses: ./.github/workflows/cd-update-backend-ai-image.yml
+    secrets:
+      GITOPS_CD_APP_PRIVATE_KEY: ${{ secrets.GITOPS_CD_APP_PRIVATE_KEY }}
+    with:
+      service: ${{ inputs.service }}
+      image_tag: ${{ inputs.image_tag }}
+      image_digest: ${{ inputs.image_digest }}
+      source_sha: ${{ inputs.source_sha }}

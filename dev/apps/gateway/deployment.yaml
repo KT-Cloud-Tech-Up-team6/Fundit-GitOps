@@ -7,7 +7,7 @@ metadata:
     app.kubernetes.io/name: fundit-gateway
     app.kubernetes.io/part-of: fundit
 spec:
-  replicas: 1
+  # replicas는 hpa.yaml이 관리한다. 여기 두면 ArgoCD selfHeal이 HPA 값을 되돌린다.
   revisionHistoryLimit: 2
   strategy:
     type: RollingUpdate
@@ -23,6 +23,25 @@ spec:
         app.kubernetes.io/name: fundit-gateway
         app.kubernetes.io/part-of: fundit
     spec:
+      # spot NodePool 사용을 허용한다. 두 파드가 모두 spot에 있고 두 노드가 동시에 회수되면
+      # 새 파드가 뜰 때까지(약 1~2분) 서비스가 중단될 수 있다. dev에서는 이 위험을 수용한다.
+      tolerations:
+        - key: fundit.io/spot
+          operator: Equal
+          value: "true"
+          effect: NoSchedule
+      # 한 AZ 장애에도 파드가 남도록 2a·2c에 나눠 띄운다.
+      topologySpreadConstraints:
+        - maxSkew: 1
+          minDomains: 2
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: DoNotSchedule
+          # 롤링 배포 중 이전 버전 파드를 세지 않도록 같은 ReplicaSet 파드끼리만 비교한다.
+          matchLabelKeys:
+            - pod-template-hash
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: fundit-gateway
       automountServiceAccountToken: false
       securityContext:
         runAsNonRoot: true
@@ -32,11 +51,15 @@ spec:
           type: RuntimeDefault
       containers:
         - name: gateway
-          image: 899957568205.dkr.ecr.ap-northeast-2.amazonaws.com/fundit-backend:sha-gateway-service-e435378f234011dbc7f5fd74787f0d7efaf1e037@sha256:a2a7195035366cffc465f8b342c63b4a3f4b02c608f5d7a0e847954074257917
+          image: 899957568205.dkr.ecr.ap-northeast-2.amazonaws.com/fundit-backend
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
               containerPort: 8080
+              protocol: TCP
+            # Actuator 관리 포트. 백엔드 이미지가 8081로 분리하기 전에 미리 선언한다.
+            - name: management
+              containerPort: 8081
               protocol: TCP
           envFrom:
             - configMapRef:
@@ -58,26 +81,44 @@ spec:
           volumeMounts:
             - name: tmp
               mountPath: /tmp
+          # [전환 기간 한정] Actuator가 8080(구 이미지) 또는 8081(신 이미지)에 있으므로, 둘 중
+          # 어디서든 /actuator/health가 200이면 통과시키는 호환 HTTP 체크를 쓴다.
+          # - 구 이미지: 8081은 연결 거부, 8080 health 200 -> 통과 (health DOWN이면 503 -> 실패)
+          # - 신 이미지: 8081 health 200 -> 통과 (DOWN이면 503, 8080은 404 -> 실패)
+          # DB 연결 실패처럼 포트만 열린 상태는 두 이미지 모두 Ready가 되지 않는다.
+          # 모든 서비스가 신 이미지로 교체되고 검증된 뒤 8081 httpGet으로 되돌리는 후속 PR로 제거한다.
           startupProbe:
-            httpGet:
-              path: /actuator/health
-              port: http
+            exec:
+              command:
+                - sh
+                - -c
+                - wget -q -T 2 -O /dev/null http://127.0.0.1:8081/actuator/health || wget -q -T 2 -O /dev/null http://127.0.0.1:8080/actuator/health
             periodSeconds: 5
+            timeoutSeconds: 5
             failureThreshold: 30
           readinessProbe:
-            httpGet:
-              path: /actuator/health
-              port: http
+            exec:
+              command:
+                - sh
+                - -c
+                - wget -q -T 2 -O /dev/null http://127.0.0.1:8081/actuator/health || wget -q -T 2 -O /dev/null http://127.0.0.1:8080/actuator/health
             periodSeconds: 5
-            timeoutSeconds: 2
+            timeoutSeconds: 5
             failureThreshold: 3
           livenessProbe:
-            httpGet:
-              path: /actuator/health
-              port: http
+            exec:
+              command:
+                - sh
+                - -c
+                - wget -q -T 2 -O /dev/null http://127.0.0.1:8081/actuator/health || wget -q -T 2 -O /dev/null http://127.0.0.1:8080/actuator/health
             periodSeconds: 10
-            timeoutSeconds: 2
+            timeoutSeconds: 5
             failureThreshold: 3
+          # ALB가 대상에서 빼기 전에 들어온 요청을 처리하도록 종료를 늦춘다.
+          lifecycle:
+            preStop:
+              sleep:
+                seconds: 15
           resources:
             requests:
               cpu: 250m
@@ -89,4 +130,5 @@ spec:
         - name: tmp
           emptyDir:
             sizeLimit: 128Mi
-      terminationGracePeriodSeconds: 30
+      # preStop 15초 뒤 Spring graceful shutdown(기본 30초)이 끝날 시간을 둔다.
+      terminationGracePeriodSeconds: 45

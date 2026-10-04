@@ -6,6 +6,11 @@ metadata:
 spec:
   instances: 2
 
+  # 기본값(unsupervised)이면 스펙 변경 시 오퍼레이터가 Standby 재시작→Switchover→
+  # Primary 재시작을 통제 없이 자동으로 진행한다. stateful 노드그룹 이전 작업 중엔
+  # 각 단계를 kubectl cnpg promote 등으로 직접 승인하기 위해 수동으로 둔다.
+  primaryUpdateStrategy: supervised
+
   # 백엔드 로컬 개발(docker-compose, Testcontainers)이 전부 postgres:16을 쓴다.
   # imageName을 안 정하면 오퍼레이터 1.30.0 기본값(18.4)이 적용돼 버전이 어긋난다.
   imageName: ghcr.io/cloudnative-pg/postgresql:16-system-trixie
@@ -16,7 +21,9 @@ spec:
       - pgaudit
     parameters:
       pgaudit.log: "write,ddl,role,misc"
-      # 바인드 파라미터에 비밀번호·개인정보가 남지 않도록 원문 값은 기록하지 않는다.
+      # SQL 원문과 그 안의 리터럴은 pgAudit 감사 레코드에 남기지 않는다.
+      pgaudit.log_statement: "off"
+      # 바인드 파라미터도 별도 기록하지 않는다.
       pgaudit.log_parameter: "off"
       # DML 감사로그에 대상 relation 정보를 남기되 시스템 카탈로그 조회 잡음은 제외한다.
       pgaudit.log_relation: "on"
@@ -42,8 +49,9 @@ spec:
       cpu: "1000m"
       memory: "2Gi"
 
+  # PodMonitor는 release 라벨을 붙이려고 podmonitor.yaml에서 직접 관리한다.
   monitoring:
-    enablePodMonitor: true
+    enablePodMonitor: false
 
   # topologyKey를 zone으로 지정해야 실제로 AZ 단위 분리가 된다.
   # 지정 안 하면 기본값은 노드(hostname) 단위라, 지금 두 노드가 서로 다른
@@ -52,6 +60,21 @@ spec:
     enablePodAntiAffinity: true
     topologyKey: topology.kubernetes.io/zone
     podAntiAffinityType: preferred
+    # stateful-ng 노드의 taint(workload=stateful:NoSchedule)를 통과하기 위한 톨러레이션
+    tolerations:
+      - key: workload
+        operator: Equal
+        value: stateful
+        effect: NoSchedule
+    # stateful-ng 노드(role=stateful)에만 스케줄되도록 고정
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
+              - key: role
+                operator: In
+                values:
+                  - stateful
 
   serviceAccountTemplate:
     metadata:

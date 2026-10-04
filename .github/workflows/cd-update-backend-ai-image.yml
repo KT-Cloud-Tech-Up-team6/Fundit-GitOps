@@ -1,0 +1,233 @@
+name: Update Backend or AI GitOps image
+
+# Only the fixed service wrappers below may call this workflow. The source CI
+# supplies a tag, digest, and commit; it never chooses an image or file path.
+on:
+  workflow_call:
+    inputs:
+      service:
+        required: true
+        type: string
+      image_tag:
+        required: true
+        type: string
+      image_digest:
+        required: true
+        type: string
+      source_sha:
+        required: true
+        type: string
+    secrets:
+      GITOPS_CD_APP_PRIVATE_KEY:
+        required: true
+
+permissions:
+  contents: read
+  id-token: write
+
+# Share the FE lock: two dispatches must not overwrite one another on main.
+concurrency:
+  group: gitops-image-update-main
+  queue: max
+  cancel-in-progress: false
+
+jobs:
+  update-image:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Resolve allowed target
+        id: target
+        env:
+          SERVICE: ${{ inputs.service }}
+        run: |
+          set -euo pipefail
+          case "$SERVICE" in
+            auth|member|project|order|payment|fulfillment|notification|search|live)
+              echo "image=899957568205.dkr.ecr.ap-northeast-2.amazonaws.com/fundit-backend" >> "$GITHUB_OUTPUT"
+              echo "repository=fundit-backend" >> "$GITHUB_OUTPUT"
+              echo "file=dev/apps/services/$SERVICE/kustomization.yaml" >> "$GITHUB_OUTPUT"
+              echo "source_repo=Fundit-backend" >> "$GITHUB_OUTPUT"
+              echo "source_branch=develop" >> "$GITHUB_OUTPUT"
+              echo "tag_prefix=sha-$SERVICE-service-" >> "$GITHUB_OUTPUT"
+              echo "source_mode=backend" >> "$GITHUB_OUTPUT"
+              ;;
+            gateway)
+              echo "image=899957568205.dkr.ecr.ap-northeast-2.amazonaws.com/fundit-backend" >> "$GITHUB_OUTPUT"
+              echo "repository=fundit-backend" >> "$GITHUB_OUTPUT"
+              echo "file=dev/apps/gateway/kustomization.yaml" >> "$GITHUB_OUTPUT"
+              echo "source_repo=Fundit-backend" >> "$GITHUB_OUTPUT"
+              echo "source_branch=develop" >> "$GITHUB_OUTPUT"
+              echo "tag_prefix=sha-gateway-service-" >> "$GITHUB_OUTPUT"
+              echo "source_mode=backend" >> "$GITHUB_OUTPUT"
+              ;;
+            ai-copilot)
+              echo "image=899957568205.dkr.ecr.ap-northeast-2.amazonaws.com/fundit-ai-copilot" >> "$GITHUB_OUTPUT"
+              echo "repository=fundit-ai-copilot" >> "$GITHUB_OUTPUT"
+              echo "file=dev/apps/services/ai-copilot/kustomization.yaml" >> "$GITHUB_OUTPUT"
+              echo "source_repo=Fundit-Ai-copilot" >> "$GITHUB_OUTPUT"
+              echo "source_branch=main" >> "$GITHUB_OUTPUT"
+              echo "tag_prefix=sha-" >> "$GITHUB_OUTPUT"
+              echo "source_mode=head" >> "$GITHUB_OUTPUT"
+              ;;
+            ai-highlight)
+              echo "image=899957568205.dkr.ecr.ap-northeast-2.amazonaws.com/fundit-ai-highlight" >> "$GITHUB_OUTPUT"
+              echo "repository=fundit-ai-highlight" >> "$GITHUB_OUTPUT"
+              echo "file=dev/apps/services/ai-highlight/kustomization.yaml" >> "$GITHUB_OUTPUT"
+              echo "source_repo=Funddit-Ai-highlight" >> "$GITHUB_OUTPUT"
+              echo "source_branch=master" >> "$GITHUB_OUTPUT"
+              echo "tag_prefix=sha-" >> "$GITHUB_OUTPUT"
+              echo "source_mode=head" >> "$GITHUB_OUTPUT"
+              ;;
+            *)
+              echo "::error::Unsupported service: $SERVICE"
+              exit 1
+              ;;
+          esac
+
+      - name: Validate image identity and source
+        env:
+          GH_TOKEN: ${{ github.token }}
+          IMAGE_TAG: ${{ inputs.image_tag }}
+          IMAGE_DIGEST: ${{ inputs.image_digest }}
+          SOURCE_SHA: ${{ inputs.source_sha }}
+          SOURCE_REPO: ${{ steps.target.outputs.source_repo }}
+          SOURCE_BRANCH: ${{ steps.target.outputs.source_branch }}
+          SOURCE_MODE: ${{ steps.target.outputs.source_mode }}
+          TAG_PREFIX: ${{ steps.target.outputs.tag_prefix }}
+        run: |
+          set -euo pipefail
+          [[ "$SOURCE_SHA" =~ ^[0-9a-f]{40}$ ]] || { echo '::error::Invalid source SHA'; exit 1; }
+          [[ "$IMAGE_TAG" == "$TAG_PREFIX$SOURCE_SHA" ]] || { echo '::error::Tag/source mismatch'; exit 1; }
+          [[ "$IMAGE_DIGEST" =~ ^sha256:[0-9a-f]{64}$ ]] || { echo '::error::Invalid digest'; exit 1; }
+
+          if [[ "$SOURCE_MODE" == head ]]; then
+            latest_sha="$(git ls-remote "https://github.com/KT-Cloud-Tech-Up-team6/$SOURCE_REPO.git" "refs/heads/$SOURCE_BRANCH" | cut -f1)"
+            [[ -n "$latest_sha" && "$SOURCE_SHA" == "$latest_sha" ]] || {
+              echo '::error::AI source commit is not the current branch head'; exit 1;
+            }
+          else
+            # BE is a monorepo. An unrelated develop commit must not invalidate
+            # a service image that finished building later, but non-develop
+            # commits must never deploy.
+            status="$(gh api "repos/KT-Cloud-Tech-Up-team6/$SOURCE_REPO/compare/$SOURCE_SHA...$SOURCE_BRANCH" --jq .status)"
+            [[ "$status" == ahead || "$status" == identical ]] || {
+              echo '::error::Backend source commit is not on develop'; exit 1;
+            }
+          fi
+
+      - name: Configure AWS credentials for ECR read
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.GITOPS_BE_AI_ECR_READ_ROLE_ARN }}
+          aws-region: ap-northeast-2
+
+      - name: Verify ECR tag and digest
+        env:
+          ECR_REPOSITORY: ${{ steps.target.outputs.repository }}
+          IMAGE_TAG: ${{ inputs.image_tag }}
+          IMAGE_DIGEST: ${{ inputs.image_digest }}
+        run: |
+          set -euo pipefail
+          actual="$(aws ecr describe-images --repository-name "$ECR_REPOSITORY" \
+            --image-ids "imageTag=$IMAGE_TAG" --query 'imageDetails[0].imageDigest' --output text)"
+          [[ "$actual" == "$IMAGE_DIGEST" ]] || { echo '::error::ECR tag/digest mismatch'; exit 1; }
+
+      - name: Create GitOps CD App token
+        id: app-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3
+        with:
+          client-id: ${{ vars.GITOPS_CD_APP_CLIENT_ID }}
+          private-key: ${{ secrets.GITOPS_CD_APP_PRIVATE_KEY }}
+          permission-contents: write
+
+      - name: Checkout GitOps main
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: main
+          token: ${{ steps.app-token.outputs.token }}
+
+      - name: Reject Backend image rollback
+        if: steps.target.outputs.source_mode == 'backend'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SERVICE: ${{ inputs.service }}
+          SOURCE_SHA: ${{ inputs.source_sha }}
+          TARGET_FILE: ${{ steps.target.outputs.file }}
+        run: |
+          set -euo pipefail
+          current_tag="$(sed -nE 's/^    newTag: (sha-[^ ]+)$/\1/p' "$TARGET_FILE")"
+          prefix="sha-$SERVICE-service-"
+          [[ "$current_tag" == "$prefix"* ]] || { echo '::error::Unexpected current BE tag'; exit 1; }
+          current_sha="${current_tag#"$prefix"}"
+          [[ "$current_sha" =~ ^[0-9a-f]{40}$ ]] || { echo '::error::Invalid current BE SHA'; exit 1; }
+          status="$(gh api "repos/KT-Cloud-Tech-Up-team6/Fundit-backend/compare/$current_sha...$SOURCE_SHA" --jq .status)"
+          [[ "$status" == ahead || "$status" == identical ]] || {
+            echo '::error::An older or divergent Backend image cannot replace the current one'; exit 1;
+          }
+
+      - name: Update allowed image entry
+        env:
+          TARGET_FILE: ${{ steps.target.outputs.file }}
+          TARGET_IMAGE: ${{ steps.target.outputs.image }}
+          IMAGE_TAG: ${{ inputs.image_tag }}
+          IMAGE_DIGEST: ${{ inputs.image_digest }}
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import os
+          import re
+          import sys
+
+          target = Path(os.environ['TARGET_FILE'])
+          if not target.is_file():
+              sys.exit('Allowed GitOps image file is missing')
+          original = target.read_text(encoding='utf-8')
+          image = re.escape(os.environ['TARGET_IMAGE'])
+          pattern = r'(- name: ' + image + r'\n    newTag: )\S+(\n    digest: )\S+'
+          updated, count = re.subn(pattern, lambda m: (
+              m.group(1) + os.environ['IMAGE_TAG'] + m.group(2) + os.environ['IMAGE_DIGEST']
+          ), original)
+          if count != 1:
+              sys.exit(f'Expected one allowed image entry, found {count}')
+          target.write_text(updated, encoding='utf-8')
+          PY
+
+      - name: Verify and push only the allowed file
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SOURCE_REPO: ${{ steps.target.outputs.source_repo }}
+          SOURCE_BRANCH: ${{ steps.target.outputs.source_branch }}
+          SOURCE_MODE: ${{ steps.target.outputs.source_mode }}
+          SOURCE_SHA: ${{ inputs.source_sha }}
+          TARGET_FILE: ${{ steps.target.outputs.file }}
+          SERVICE: ${{ inputs.service }}
+          IMAGE_TAG: ${{ inputs.image_tag }}
+        run: |
+          set -euo pipefail
+          changed="$(git diff --name-only)"
+          [[ -n "$changed" ]] || exit 0
+          [[ "$changed" == "$TARGET_FILE" ]] || { echo '::error::Unexpected file change'; exit 1; }
+          git diff --check
+
+          # Recheck after validation so a newly advanced source branch cannot
+          # cause an older AI image to deploy. BE accepts any develop ancestor,
+          # with the current per-service deployed SHA checked above.
+          if [[ "$SOURCE_MODE" == head ]]; then
+            latest_sha="$(git ls-remote "https://github.com/KT-Cloud-Tech-Up-team6/$SOURCE_REPO.git" "refs/heads/$SOURCE_BRANCH" | cut -f1)"
+            [[ -n "$latest_sha" && "$SOURCE_SHA" == "$latest_sha" ]] || {
+              echo '::error::AI source branch advanced'; exit 1;
+            }
+          else
+            status="$(gh api "repos/KT-Cloud-Tech-Up-team6/$SOURCE_REPO/compare/$SOURCE_SHA...$SOURCE_BRANCH" --jq .status)"
+            [[ "$status" == ahead || "$status" == identical ]] || {
+              echo '::error::Backend source left develop'; exit 1;
+            }
+          fi
+
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- "$TARGET_FILE"
+          git commit -m "chore($SERVICE): deploy $IMAGE_TAG"
+          git push origin HEAD:main

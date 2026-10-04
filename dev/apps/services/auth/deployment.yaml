@@ -32,11 +32,15 @@ spec:
           type: RuntimeDefault
       containers:
         - name: auth
-          image: 899957568205.dkr.ecr.ap-northeast-2.amazonaws.com/fundit-backend:sha-auth-service-cb088fcc007855cd112c888c8a557652646466aa@sha256:85a54493342d4e804738d1826817a7c792152962ff412adf94e38b3347e1c044
+          image: 899957568205.dkr.ecr.ap-northeast-2.amazonaws.com/fundit-backend
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
               containerPort: 8080
+              protocol: TCP
+            # Actuator 관리 포트. 백엔드 이미지가 8081로 분리하기 전에 미리 선언한다.
+            - name: management
+              containerPort: 8081
               protocol: TCP
           envFrom:
             - configMapRef:
@@ -140,25 +144,38 @@ spec:
           volumeMounts:
             - name: tmp
               mountPath: /tmp
+          # [전환 기간 한정] Actuator가 8080(구 이미지) 또는 8081(신 이미지)에 있으므로, 둘 중
+          # 어디서든 /actuator/health가 200이면 통과시키는 호환 HTTP 체크를 쓴다.
+          # - 구 이미지: 8081은 연결 거부, 8080 health 200 -> 통과 (health DOWN이면 503 -> 실패)
+          # - 신 이미지: 8081 health 200 -> 통과 (DOWN이면 503, 8080은 404 -> 실패)
+          # DB 연결 실패처럼 포트만 열린 상태는 두 이미지 모두 Ready가 되지 않는다.
+          # 모든 서비스가 신 이미지로 교체되고 검증된 뒤 8081 httpGet으로 되돌리는 후속 PR로 제거한다.
           startupProbe:
-            httpGet:
-              path: /actuator/health
-              port: http
+            exec:
+              command:
+                - sh
+                - -c
+                - wget -q -T 2 -O /dev/null http://127.0.0.1:8081/actuator/health || wget -q -T 2 -O /dev/null http://127.0.0.1:8080/actuator/health
             periodSeconds: 5
+            timeoutSeconds: 5
             failureThreshold: 30
           readinessProbe:
-            httpGet:
-              path: /actuator/health
-              port: http
+            exec:
+              command:
+                - sh
+                - -c
+                - wget -q -T 2 -O /dev/null http://127.0.0.1:8081/actuator/health || wget -q -T 2 -O /dev/null http://127.0.0.1:8080/actuator/health
             periodSeconds: 5
-            timeoutSeconds: 2
+            timeoutSeconds: 5
             failureThreshold: 3
           livenessProbe:
-            httpGet:
-              path: /actuator/health
-              port: http
+            exec:
+              command:
+                - sh
+                - -c
+                - wget -q -T 2 -O /dev/null http://127.0.0.1:8081/actuator/health || wget -q -T 2 -O /dev/null http://127.0.0.1:8080/actuator/health
             periodSeconds: 10
-            timeoutSeconds: 2
+            timeoutSeconds: 5
             failureThreshold: 3
           resources:
             requests:

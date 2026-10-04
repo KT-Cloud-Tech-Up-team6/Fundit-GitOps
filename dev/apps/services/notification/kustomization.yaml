@@ -1,0 +1,12 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - configmap.yaml
+  - deployment.yaml
+  - service.yaml
+
+images:
+  - name: 899957568205.dkr.ecr.ap-northeast-2.amazonaws.com/fundit-backend
+    newTag: sha-notification-service-e6a1c773d2528e83e1a3cd803e983162ac736573
+    digest: sha256:83f1960bcef2ec1b850bb94ed4ca9172e0b5100b89f596e4241e3ef20188003a

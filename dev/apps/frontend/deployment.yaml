@@ -6,7 +6,7 @@ metadata:
   labels:
     app: fundit-frontend
 spec:
-  replicas: 1
+  # replicas는 hpa.yaml이 관리한다. 여기 두면 ArgoCD selfHeal이 HPA 값을 되돌린다.
   revisionHistoryLimit: 2
   strategy:
     type: RollingUpdate
@@ -21,6 +21,25 @@ spec:
       labels:
         app: fundit-frontend
     spec:
+      # spot NodePool 사용을 허용한다. 두 파드가 모두 spot에 있고 두 노드가 동시에 회수되면
+      # 새 파드가 뜰 때까지(약 1~2분) 서비스가 중단될 수 있다. dev에서는 이 위험을 수용한다.
+      tolerations:
+        - key: fundit.io/spot
+          operator: Equal
+          value: "true"
+          effect: NoSchedule
+      # 한 AZ 장애에도 파드가 남도록 2a·2c에 나눠 띄운다.
+      topologySpreadConstraints:
+        - maxSkew: 1
+          minDomains: 2
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: DoNotSchedule
+          # 롤링 배포 중 이전 버전 파드를 세지 않도록 같은 ReplicaSet 파드끼리만 비교한다.
+          matchLabelKeys:
+            - pod-template-hash
+          labelSelector:
+            matchLabels:
+              app: fundit-frontend
       automountServiceAccountToken: false
       securityContext:
         runAsNonRoot: true
@@ -32,7 +51,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: fundit-frontend
-          image: 899957568205.dkr.ecr.ap-northeast-2.amazonaws.com/fundit-frontend:sha-a6f9734e58b20761f74e86c2ccbf1f94aac6a85e@sha256:cf881ebb1911cac65e8ca4497a539adebbd294227c12013c010079c1dc480f9d
+          image: 899957568205.dkr.ecr.ap-northeast-2.amazonaws.com/fundit-frontend
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
@@ -69,6 +88,11 @@ spec:
             periodSeconds: 10
             timeoutSeconds: 2
             failureThreshold: 3
+          # ALB가 대상에서 빼기 전에 들어온 요청을 처리하도록 종료를 늦춘다.
+          lifecycle:
+            preStop:
+              sleep:
+                seconds: 15
           resources:
             requests:
               cpu: 100m

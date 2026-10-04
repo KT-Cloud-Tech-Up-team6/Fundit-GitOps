@@ -1,0 +1,13 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - configmap.yaml
+  - pvc.yaml
+  - deployment.yaml
+  - service.yaml
+
+images:
+  - name: 899957568205.dkr.ecr.ap-northeast-2.amazonaws.com/fundit-ai-copilot
+    newTag: sha-a64b9519534aed3eef555aea41f5e1e3c5c0d4c0
+    digest: sha256:f80e930235d2219e71263e77f3a006ca1abea72919987d2c400f067ca7e35e44
