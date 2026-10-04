@@ -16,6 +16,7 @@ resources:
   - monitoring/alertmanagerconfig.yaml
   - monitoring/podmonitor-backend.yaml
   - monitoring/dashboards/hpa.yaml
+  - monitoring/dashboards/backend-actuator.yaml
   - monitoring/dashboards/infra-overview.yaml
   - monitoring/dashboards/ingress.yaml
   - monitoring/dashboards/service-golden-signals.yaml
