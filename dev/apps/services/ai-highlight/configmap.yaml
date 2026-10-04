@@ -19,4 +19,6 @@ data:
   LIVE_SERVICE_URL: http://fundit-live-svc:8080
   # live.ended.v1 방송 종료 이벤트 자동 수신 컨슈머 활성화
   ENABLE_KAFKA_CONSUMER: "1"
+  # Kafka 방송 종료 이벤트 수신 시 프로젝트 상품명 조회를 위한 주소
+  PROJECT_SERVICE_URL: http://fundit-project-svc:8080
 

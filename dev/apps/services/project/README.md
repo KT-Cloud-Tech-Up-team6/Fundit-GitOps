@@ -29,7 +29,7 @@ Project 관련 `/api/v1/*` 경로 정의는 Gateway 애플리케이션에 포함
 
 ## 배포 이미지
 
-Backend `develop`의 성공한 project-service CI/CD 결과를 tag와 digest로 고정합니다.
-
-- commit: `ce5d882817477852e9fdfa8a21e5cc3a060daaa6`
-- CD run: `35677462680`
+Backend `develop`의 성공한 project-service 이미지가 GitOps 자동 갱신으로 반영됩니다.
+현재 선언된 tag와 digest는 이 디렉터리의 `kustomization.yaml` `images` 항목에서 확인합니다.
+실제 배포 이미지는 `dev/fundit-project` Deployment와 Pod의 `imageID`로 대조합니다.
+이전 CI 커밋이나 실행 번호를 현재 배포 버전으로 간주하지 않습니다.

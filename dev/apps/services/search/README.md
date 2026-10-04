@@ -36,7 +36,7 @@ Gateway의 `SEARCH_SERVICE_BASE_URL`은 `http://fundit-search-svc:8080`을 사�
 
 ## 배포 이미지
 
-Backend `develop`의 성공한 search-service CI/CD 결과를 tag와 digest로 고정합니다.
-
-- commit: `11c61dedb7fe6248d41ab1f00979b80577590301`
-- CD run: `35696682430`
+Backend `develop`의 성공한 search-service 이미지가 GitOps 자동 갱신으로 반영됩니다.
+현재 선언된 tag와 digest는 이 디렉터리의 `kustomization.yaml` `images` 항목에서 확인합니다.
+실제 배포 이미지는 `dev/fundit-search` Deployment와 Pod의 `imageID`로 대조합니다.
+이전 CI 커밋이나 실행 번호를 현재 배포 버전으로 간주하지 않습니다.
