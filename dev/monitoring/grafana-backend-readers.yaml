@@ -1,0 +1,26 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: fundit-backend-grafana-proxy
+  namespace: monitoring
+rules:
+  # kubectl proxy uses the port-qualified Service proxy path. Do not grant
+  # pods/portforward: it would also expose other monitoring workloads.
+  - apiGroups: [""]
+    resources: ["services/proxy"]
+    resourceNames: ["http:kube-prometheus-stack-grafana:80"]
+    verbs: ["get", "create"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: fundit-backend-grafana-proxy
+  namespace: monitoring
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: fundit-backend-grafana-proxy
+subjects:
+  - kind: Group
+    name: fundit-backend-grafana-readers
+    apiGroup: rbac.authorization.k8s.io
