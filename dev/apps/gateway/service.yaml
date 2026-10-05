@@ -7,12 +7,10 @@ metadata:
     app.kubernetes.io/name: fundit-gateway
     app.kubernetes.io/part-of: fundit
   annotations:
-    # Actuator가 8081로 분리되면 8080의 /actuator/health는 404가 되어, 구/신 이미지를 모두 만족하는
-    # Actuator 기반 ALB 헬스체크 경로가 없다. 그래서 Gateway가 직접 응답하는 '/'(라우트 없음 -> 404)를
-    # 쓰고, 200/404만 성공으로 본다. 401/403(필터 이상), 3xx, 5xx, 타임아웃, 연결 거부는 실패다.
+    # 8080에는 Actuator가 없어 Gateway가 직접 응답하는 '/'(라우트 없음 -> 404)를 쓰고 200/404만 성공으로 본다.
+    # 401/403(필터 이상), 3xx, 5xx, 타임아웃, 연결 거부는 실패다.
     # 하위 서비스로 프록시되는 경로는 하위 장애가 Gateway 전체 Unhealthy로 번지므로 쓰지 않는다.
-    # 실제 건강 상태(DB 등)는 전환 기간 동안 Pod readinessProbe의 호환 HTTP 체크
-    # (8081 또는 8080의 /actuator/health)가 판단하고, Ready가 아닌 Pod는 ALB 타깃에 등록되지 않는다.
+    # 실제 건강 상태(DB 등)는 readinessProbe(8081 /actuator/health)가 판단하고 Ready가 아닌 Pod는 ALB 타깃에 등록되지 않는다.
     alb.ingress.kubernetes.io/healthcheck-path: /
     alb.ingress.kubernetes.io/healthcheck-port: traffic-port
     alb.ingress.kubernetes.io/success-codes: "200,404"

@@ -15,7 +15,10 @@ resources:
   - monitoring/alerts.yaml
   - monitoring/alertmanagerconfig.yaml
   - monitoring/kafka-exporter.yaml
+  - monitoring/grafana-backend-readers.yaml
+  - monitoring/podmonitor-backend.yaml
   - monitoring/dashboards/hpa.yaml
+  - monitoring/dashboards/backend-actuator.yaml
   - monitoring/dashboards/infra-overview.yaml
   - monitoring/dashboards/ingress.yaml
   - monitoring/dashboards/service-golden-signals.yaml

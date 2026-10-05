@@ -33,18 +33,21 @@ spec:
             limits:
               cpu: 100m
               memory: 128Mi
+          # /metrics는 Kafka 조회를 수행하므로 상태 검사는 Exporter 전용 /healthz를 사용한다.
           readinessProbe:
             httpGet:
-              path: /metrics
+              path: /healthz
               port: metrics
             initialDelaySeconds: 10
             periodSeconds: 10
+            timeoutSeconds: 3
           livenessProbe:
             httpGet:
-              path: /metrics
+              path: /healthz
               port: metrics
             initialDelaySeconds: 15
             periodSeconds: 15
+            timeoutSeconds: 3
 ---
 apiVersion: v1
 kind: Service

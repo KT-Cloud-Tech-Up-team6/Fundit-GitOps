@@ -1,0 +1,187 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fundit-dashboard-backend-actuator
+  namespace: monitoring
+  labels:
+    grafana_dashboard: "1"
+data:
+  fundit-backend-jvm.json: |
+    {
+      "editable": false,
+      "graphTooltip": 0,
+      "panels": [
+        {
+          "id": 1,
+          "title": "JVM Heap 사용량",
+          "type": "timeseries",
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": { "defaults": { "unit": "bytes" } },
+          "targets": [
+            {
+              "expr": "sum by (application) (jvm_memory_used_bytes{namespace=\"dev\",area=\"heap\"})",
+              "legendFormat": "{{application}}",
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "id": 2,
+          "title": "JVM Non-Heap 사용량",
+          "type": "timeseries",
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": { "defaults": { "unit": "bytes" } },
+          "targets": [
+            {
+              "expr": "sum by (application) (jvm_memory_used_bytes{namespace=\"dev\",area=\"nonheap\"})",
+              "legendFormat": "{{application}}",
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "id": 3,
+          "title": "Live Threads",
+          "type": "timeseries",
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [
+            {
+              "expr": "sum by (application) (jvm_threads_live_threads{namespace=\"dev\"})",
+              "legendFormat": "{{application}}",
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "id": 4,
+          "title": "GC 일시정지 시간 비율 (5분)",
+          "type": "timeseries",
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": { "defaults": { "unit": "percentunit" } },
+          "targets": [
+            {
+              "expr": "sum by (application) (rate(jvm_gc_pause_seconds_sum{namespace=\"dev\"}[5m]))",
+              "legendFormat": "{{application}}",
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "id": 5,
+          "title": "프로세스 CPU 사용률",
+          "type": "timeseries",
+          "gridPos": { "h": 8, "w": 24, "x": 0, "y": 16 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": { "defaults": { "unit": "percentunit" } },
+          "targets": [
+            {
+              "expr": "avg by (application) (process_cpu_usage{namespace=\"dev\"})",
+              "legendFormat": "{{application}}",
+              "refId": "A"
+            }
+          ]
+        }
+      ],
+      "refresh": "30s",
+      "schemaVersion": 39,
+      "tags": ["fundit", "backend", "jvm", "micrometer"],
+      "time": { "from": "now-6h", "to": "now" },
+      "timezone": "Asia/Seoul",
+      "title": "Fundit - Backend JVM (Micrometer)",
+      "uid": "fundit-backend-jvm",
+      "version": 1
+    }
+  fundit-backend-spring.json: |
+    {
+      "editable": false,
+      "graphTooltip": 0,
+      "panels": [
+        {
+          "id": 1,
+          "title": "HikariCP 활성 연결",
+          "type": "timeseries",
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [
+            {
+              "expr": "sum by (application) (hikaricp_connections_active{namespace=\"dev\"})",
+              "legendFormat": "{{application}}",
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "id": 2,
+          "title": "HikariCP 최대 연결",
+          "type": "timeseries",
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [
+            {
+              "expr": "sum by (application) (hikaricp_connections_max{namespace=\"dev\"})",
+              "legendFormat": "{{application}}",
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "id": 3,
+          "title": "HTTP 요청률 (5분)",
+          "description": "실제 요청이 발생한 서비스부터 시계열이 표시됩니다.",
+          "type": "timeseries",
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": { "defaults": { "unit": "reqps" } },
+          "targets": [
+            {
+              "expr": "sum by (application) (rate(http_server_requests_seconds_count{namespace=\"dev\"}[5m]))",
+              "legendFormat": "{{application}}",
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "id": 4,
+          "title": "HTTP 5xx 요청률 (5분)",
+          "type": "timeseries",
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": { "defaults": { "unit": "reqps" } },
+          "targets": [
+            {
+              "expr": "sum by (application) (rate(http_server_requests_seconds_count{namespace=\"dev\",status=~\"5..\"}[5m]))",
+              "legendFormat": "{{application}}",
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "id": 5,
+          "title": "HTTP 응답시간 p95 (5분)",
+          "description": "실제 요청이 없는 서비스에는 응답시간 시계열이 표시되지 않습니다.",
+          "type": "timeseries",
+          "gridPos": { "h": 8, "w": 24, "x": 0, "y": 16 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": { "defaults": { "unit": "s" } },
+          "targets": [
+            {
+              "expr": "histogram_quantile(0.95, sum by (le, application) (rate(http_server_requests_seconds_bucket{namespace=\"dev\"}[5m])))",
+              "legendFormat": "{{application}}",
+              "refId": "A"
+            }
+          ]
+        }
+      ],
+      "refresh": "30s",
+      "schemaVersion": 39,
+      "tags": ["fundit", "backend", "spring-boot", "micrometer"],
+      "time": { "from": "now-6h", "to": "now" },
+      "timezone": "Asia/Seoul",
+      "title": "Fundit - Backend Spring Boot (Micrometer)",
+      "uid": "fundit-backend-spring",
+      "version": 1
+    }
